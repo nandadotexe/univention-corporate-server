@@ -1739,6 +1739,19 @@ define([
 			var validationDeferred = this.umcpCommand('udm/validate', params);
 			var saveDeferred = new Deferred();
 			validationDeferred.then(lang.hitch(this, function(data) {
+				if (params.properties.portalComputers) {
+					var neww = [];
+					array.forEach(params.properties.portalComputers, lang.hitch(this, function(iPortalComputer) {
+						if (array.indexOf(this._receivedObjFormData.portalComputers, iPortalComputer) === -1) {
+							neww.push(iPortalComputer);
+						}
+					}));
+					params.properties.portalComputers = neww;
+				}
+				var collisionDeferred = this.umcpCommand('udm/portal_collision', params);
+				collisionDeferred.then(lang.hitch(this, function(data) {
+					console.log(data);
+				}));
 				// if all elements are valid, save element
 				if (this._parseValidation(data.result)) {
 					var deferred = null;
