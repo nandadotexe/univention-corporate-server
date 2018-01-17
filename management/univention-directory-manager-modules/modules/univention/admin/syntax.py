@@ -2165,6 +2165,14 @@ class HostDN(UDM_Objects):
 	udm_filter = '!(univentionObjectFlag=docker)'
 
 
+class PortalComputerDN(UDM_Objects):
+	udm_modules = ('computers/computer', )
+	udm_filter = 'objectClass=univentionPortalComputer'
+	#  use_objects = False
+	#  label = '%(name)s'
+	#  empty_value = True
+
+
 class UserID(UDM_Objects):
 	udm_modules = ('users/user', )
 	key = '%(uidNumber)s'

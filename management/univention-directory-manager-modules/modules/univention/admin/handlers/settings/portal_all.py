@@ -30,44 +30,19 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <http://www.gnu.org/licenses/>.
 
-import univention.admin.filter
-import univention.admin.localization
-from univention.admin.layout import Tab
 
 import univention.admin.handlers
 import univention.admin.handlers.settings.portal
 import univention.admin.handlers.settings.portal_entry
 
 
-translation = univention.admin.localization.translation('univention.admin.handlers.settings')
-_ = translation.translate
-
-
 module = 'settings/portal_all'
 
-childs = 0
-short_description = _('All portal settings')
-long_description = _('Manage portals and portal entries')
 operations = ['search']
 childmodules = ['settings/portal', 'settings/portal_entry']
 virtual = 1
-options = {
-}
 property_descriptions = {
-	'name': univention.admin.property(
-		short_description=_('Name'),
-		long_description='',
-		syntax=univention.admin.syntax.dnsName,
-		multivalue=False,
-		include_in_default_search=True,
-		options=[],
-		required=True,
-		may_change=True,
-		identifies=True,
-	)
 }
-layout = [Tab(_('General'), _('Basic settings'), layout=["name"])]
-mapping = univention.admin.mapping.mapping()
 
 
 class object(univention.admin.handlers.simpleLdap):

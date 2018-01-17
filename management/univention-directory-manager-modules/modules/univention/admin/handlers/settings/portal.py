@@ -176,6 +176,17 @@ property_descriptions = {
 		may_change=True,
 		identifies=False
 	),
+	'portalComputers': univention.admin.property(
+		short_description=_('Shown on computers'),
+		long_description='TODO',
+		syntax=univention.admin.syntax.PortalComputerDN,
+		multivalue=True,
+		dontsearch=True,
+		options=[],
+		required=False,
+		may_change=True,
+		identifies=False
+	),
 }
 
 layout = [
@@ -183,6 +194,9 @@ layout = [
 		Group(_('Name'), layout=[
 			["name"],
 			["displayName"],
+		]),
+		Group(_('Allocation'), layout=[
+			["portalComputers"],
 		]),
 		Group(_('Appearance'), layout=[
 			["logo"],
@@ -231,6 +245,47 @@ mapping.register('logo', 'univentionPortalLogo', None, univention.admin.mapping.
 
 class object(univention.admin.handlers.simpleLdap):
 	module = module
+
+	def open(self):
+		super(object, self).open()
+		self['portalComputers'] = self.lo.searchDn(filter=filter_format('(&(objectClass=univentionPortalComputer)(univentionComputerPortal=%s))', [self.dn]))
+		#  self['portalComputers'] = self.lo.searchDn(filter=filter_format('(&(cn=*)(objectClass=univentionPortalComputer)(univentionComputerPortal=%s))', [self.dn]))
+		self.save()
+
+	def _ldap_addlist(self):
+		ocs = ['top', OC]
+
+		return [
+			('objectClass', ocs),
+		]
+
+	def _ldap_post_create(self):
+		self.__update_portal_computers()
+
+	def _ldap_post_modify(self):
+		self.__update_portal_computers()
+
+	def __update_portal_computers(self):
+		if self.exists():
+			# case coming from _ldap_post_modify
+			old_portal_computers = self.oldinfo.get('portalComputers', [])
+		else:
+			# case coming from _ldap_post_create
+			old_portal_computers = []
+		new_portal_computers = self.info.get('portalComputers', [])
+
+		# set univentionComputerPortal attribute of old portal computers to blank
+		for computer in old_portal_computers:
+			if computer not in new_portal_computers:
+				# TODO try catch for self.lo.modify
+				self.lo.modify(computer, [('univentionComputerPortal', self.lo.getAttr(computer, 'univentionComputerPortal'), '')])
+
+		# set univentionComputerPortal attribute of new portal computers to this portal
+		# TODO warn the user if a new computer had already a portal set
+		for computer in new_portal_computers:
+			if computer not in old_portal_computers:
+				# TODO try catch for self.lo.modify
+				self.lo.modify(computer, [('univentionComputerPortal', self.lo.getAttr(computer, 'univentionComputerPortal'), self.dn)])
 
 	def _ldap_post_remove(self):
 		for obj in univention.admin.modules.lookup('settings/portal_entry', None, self.lo, scope='sub', filter=filter_format('portal=%s', [self.dn])):
