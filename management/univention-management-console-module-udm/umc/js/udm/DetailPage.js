@@ -1739,8 +1739,8 @@ define([
 			var validationDeferred = this.umcpCommand('udm/validate', params);
 			var portalCollisionDeferred = this.umcpCommand('udm/portal_collision', {
 				object_type: this._editedObjType,
-				old_computers: this._receivedObjFormData.portalComputers || [],
-				new_computers: vals.portalComputers || []
+				old_computers: this.operation === 'add' ? [] : this._receivedObjFormData.portalComputers || [],
+				new_computers: this.operation === 'add' ? [] : vals.portalComputers || []
 			});
 			var saveDeferred = new Deferred();
 			all({

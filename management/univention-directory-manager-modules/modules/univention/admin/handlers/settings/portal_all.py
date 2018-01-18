@@ -34,15 +34,42 @@
 import univention.admin.handlers
 import univention.admin.handlers.settings.portal
 import univention.admin.handlers.settings.portal_entry
+from univention.admin.layout import Tab
 
+
+translation = univention.admin.localization.translation('univention.admin.handlers.settings')
+_ = translation.translate
 
 module = 'settings/portal_all'
 
 operations = ['search']
 childmodules = ['settings/portal', 'settings/portal_entry']
-virtual = 1
+virtual = True
 property_descriptions = {
+	'name': univention.admin.property(
+		short_description=_('Internal name'),
+		long_description='',
+		syntax=univention.admin.syntax.string_numbers_letters_dots,
+		multivalue=False,
+		include_in_default_search=True,
+		options=[],
+		required=True,
+		may_change=True,
+		identifies=True
+	),
+	'displayName': univention.admin.property(
+		short_description=_('Display Name'),
+		long_description='',
+		syntax=univention.admin.syntax.LocalizedDisplayName,
+		multivalue=True,
+		options=[],
+		required=True,
+		may_change=True,
+		identifies=False
+	),
 }
+layout = [Tab(_('General'), _('Basic settings'), layout=["name"])]
+mapping = univention.admin.mapping.mapping()
 
 
 class object(univention.admin.handlers.simpleLdap):
@@ -51,9 +78,9 @@ class object(univention.admin.handlers.simpleLdap):
 
 def lookup(co, lo, filter_s, base='', superordinate=None, scope='sub', unique=False, required=False, timeout=-1, sizelimit=0):
 	res = []
-	for por in [univention.admin.handlers.settings.portal, univention.admin.handlers.settings.portal_entry]:
-		r = por.lookup(co, lo, filter_s, base, superordinate, scope, unique, required, timeout, sizelimit)
-		res.extend(r)
+	for child in childmodules:
+		portal_module = univention.admin.modules.get(child)
+		res.extend(portal_module.lookup(co, lo, filter_s, base, superordinate, scope, unique, required, timeout, sizelimit))
 
 	return res
 

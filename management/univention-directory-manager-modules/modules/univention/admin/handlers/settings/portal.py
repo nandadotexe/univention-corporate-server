@@ -281,10 +281,14 @@ class object(univention.admin.handlers.simpleLdap):
 				self.lo.modify(computer, [('univentionComputerPortal', self.lo.getAttr(computer, 'univentionComputerPortal'), '')])
 
 		# set univentionComputerPortal attribute of new portal computers to this portal
-		# TODO warn the user if a new computer had already a portal set
 		for computer in new_portal_computers:
 			if computer not in old_portal_computers:
 				# TODO try catch for self.lo.modify
+				_objectClass = self.lo.getAttr(computer, 'objectClass')
+				if 'univentionPortalComputer' not in _objectClass:
+					new_objectClass = list(_objectClass)
+					new_objectClass.append('univentionPortalComputer')
+					self.lo.modify(computer, [('objectClass', _objectClass, new_objectClass)])
 				self.lo.modify(computer, [('univentionComputerPortal', self.lo.getAttr(computer, 'univentionComputerPortal'), self.dn)])
 
 	def _ldap_post_remove(self):
