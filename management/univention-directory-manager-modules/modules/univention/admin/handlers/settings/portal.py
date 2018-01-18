@@ -274,22 +274,22 @@ class object(univention.admin.handlers.simpleLdap):
 			old_portal_computers = []
 		new_portal_computers = self.info.get('portalComputers', [])
 
+		from univention.management.console.modules.udm.udm_ldap import get_module
+		# TODO do not import here ?
+
 		# set univentionComputerPortal attribute of old portal computers to blank
 		for computer in old_portal_computers:
 			if computer not in new_portal_computers:
-				# TODO try catch for self.lo.modify
-				self.lo.modify(computer, [('univentionComputerPortal', self.lo.getAttr(computer, 'univentionComputerPortal'), '')])
+				compobj = get_module(None, computer).get(computer)
+				compobj['portal'] = ''
+				compobj.modify()
 
 		# set univentionComputerPortal attribute of new portal computers to this portal
 		for computer in new_portal_computers:
 			if computer not in old_portal_computers:
-				# TODO try catch for self.lo.modify
-				_objectClass = self.lo.getAttr(computer, 'objectClass')
-				if 'univentionPortalComputer' not in _objectClass:
-					new_objectClass = list(_objectClass)
-					new_objectClass.append('univentionPortalComputer')
-					self.lo.modify(computer, [('objectClass', _objectClass, new_objectClass)])
-				self.lo.modify(computer, [('univentionComputerPortal', self.lo.getAttr(computer, 'univentionComputerPortal'), self.dn)])
+				compobj = get_module(None, computer).get(computer)
+				compobj['portal'] = self.dn
+				compobj.modify()
 
 	def _ldap_post_remove(self):
 		for obj in univention.admin.modules.lookup('settings/portal_entry', None, self.lo, scope='sub', filter=filter_format('portal=%s', [self.dn])):

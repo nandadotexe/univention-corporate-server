@@ -2169,7 +2169,7 @@ class PortalComputerDN(UDM_Objects):
 	udm_modules = ('computers/domaincontroller_master', 'computers/domaincontroller_backup', 'computers/domaincontroller_slave', 'computers/memberserver')
 	#  udm_modules = ('computers/computer', )
 	#  udm_filter = '(|(univentionObjectType=computers/domaincontroller_master)(univentionObjectType=computers/domaincontroller_slave)(univentionObjectType=computers/domaincontroller_backup)(univentionObjectType=computers/memberserver))'
-	#  use_objects = False
+	use_objects = False
 
 
 class UserID(UDM_Objects):

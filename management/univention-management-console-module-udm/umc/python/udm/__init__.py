@@ -850,15 +850,13 @@ class Instance(Base, ProgressMixin):
 			return []
 
 		collisions = []
-		computer_module = UDM_Module('computers/computer')
 		computers_to_check = [new_comp for new_comp in new_computers if new_comp not in old_computers]
 		for computer in computers_to_check:
-			compobj = computer_module.get(computer)
-			computerPortal = compobj.lo.getAttr(compobj.dn, 'univentionComputerPortal')
-			if len(computerPortal):
+			compobj = get_module(None, computer).get(computer)
+			if compobj['portal']:
 				collisions.append({
 					'name': compobj['name'],
-					'portal': computerPortal[0],
+					'portal': compobj['portal']
 				})
 		return collisions
 
