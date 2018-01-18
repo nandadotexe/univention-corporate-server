@@ -844,25 +844,20 @@ class Instance(Base, ProgressMixin):
 		module = self._get_module_by_request(request)
 		return module.policies
 
-	def portal_collision(self, request):
-		def _thread(request):
-			collision = []
-			if request.options.get('objectType') != 'settings/portal':
-				return collision
-
-			if 'portalComputers' not in request.options.get('properties'):
-				return collision
-
-			computer_module = UDM_Module('computers/computer')
-			for computer in request.options.get('properties').get('portalComputers'):
-				compobj = computer_module.get(computer)
-				computerPortal = compobj.lo.getAttr(compobj.dn, 'univentionComputerPortal')
-				if len(computerPortal):
-					collision.append(computer)
-			return collision
-
-		thread = notifier.threads.Simple('PortalCollision', notifier.Callback(_thread, request), notifier.Callback(self.thread_finished_callback, request))
-		thread.run()
+	@simple_response
+	def portal_collision(self, computers_to_check):
+		collisions = []
+		computer_module = UDM_Module('computers/computer')
+		for computer in computers_to_check:
+			compobj = computer_module.get(computer)
+			computerPortal = compobj.lo.getAttr(compobj.dn, 'univentionComputerPortal')
+			if len(computerPortal):
+				collisions.append({
+					'dn': computer,
+					'name': compobj['name'],
+					'portal': computerPortal[0],
+				})
+		return collisions
 
 	def validate(self, request):
 		"""Validates the correctness of values for properties of the

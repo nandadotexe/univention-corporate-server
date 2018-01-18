@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: univention-management-console-module-udm\n"
 "Report-Msgid-Bugs-To: packages@univention.de\n"
-"POT-Creation-Date: 2018-01-17 18:02+0100\n"
+"POT-Creation-Date: 2018-01-18 10:48+0100\n"
 "PO-Revision-Date: 2012-01-03 08:01+0100\n"
 "Last-Translator: Univention GmbH <packages@univention.de>\n"
 "Language-Team: Univention GmbH <packages@univention.de>\n"
@@ -21,7 +21,7 @@ msgstr "UCS kann nur bestimmte Attribute verändern."
 msgid " You can install the application using the %(link)s"
 msgstr " Die Anwendung kann im %(link)s installiert werden"
 
-#: umc/js/udm/DetailPage.js:1878
+#: umc/js/udm/DetailPage.js:1894
 msgid "%(attribute)s: %(message)s\n"
 msgstr "%(attribute)s: %(message)s\n"
 
@@ -214,7 +214,7 @@ msgstr ""
 msgid "Container"
 msgstr "Container"
 
-#: umc/js/udm/DetailPage.js:1980
+#: umc/js/udm/DetailPage.js:1996
 msgid "Continue editing"
 msgstr "Bearbeiten fortführen"
 
@@ -426,7 +426,7 @@ msgstr "Die ausgewählten Benutzer löschen"
 msgid "Desktops"
 msgstr "Desktops"
 
-#: umc/js/udm/DetailPage.js:1983
+#: umc/js/udm/DetailPage.js:1999
 msgid "Discard changes"
 msgstr "Änderungen verwerfen"
 
@@ -494,7 +494,7 @@ msgstr "Freigabe bearbeiten."
 msgid "Edit the user."
 msgstr "Benutzer bearbeiten."
 
-#: umc/js/udm/DetailPage.js:1872
+#: umc/js/udm/DetailPage.js:1888
 msgid "Error"
 msgstr "Fehler"
 
@@ -506,55 +506,55 @@ msgstr "Ablaufdatum"
 msgid "Failed to move the following objects:"
 msgstr "Die folgenden Objekte konnten nicht verschoben werden:"
 
-#: umc/js/udm/DetailPage.js:1918
+#: umc/js/udm/DetailPage.js:1934
 msgid "Failed to retrieve the DHCP object from the server."
 msgstr "Fehler beim Laden des DHCP-Objekts vom Server."
 
-#: umc/js/udm/DetailPage.js:1917
+#: umc/js/udm/DetailPage.js:1933
 msgid "Failed to retrieve the DNS object from the server."
 msgstr "Fehler beim Laden des DNS-Objekts vom Server."
 
-#: umc/js/udm/DetailPage.js:1927
+#: umc/js/udm/DetailPage.js:1943
 msgid "Failed to retrieve the LDAP object from the server."
 msgstr "Fehler beim Laden des LDAP-Objekts vom Server."
 
-#: umc/js/udm/DetailPage.js:1922
+#: umc/js/udm/DetailPage.js:1938
 msgid "Failed to retrieve the Nagios object from the server."
 msgstr "Fehler beim Laden des Nagios-Objekts vom Server."
 
-#: umc/js/udm/DetailPage.js:1915
+#: umc/js/udm/DetailPage.js:1931
 msgid "Failed to retrieve the computer from the server."
 msgstr "Fehler beim Laden des Rechners vom Server."
 
-#: umc/js/udm/DetailPage.js:1914
+#: umc/js/udm/DetailPage.js:1930
 msgid "Failed to retrieve the group from the server."
 msgstr "Fehler beim Laden der Gruppe vom Server."
 
-#: umc/js/udm/DetailPage.js:1921
+#: umc/js/udm/DetailPage.js:1937
 msgid "Failed to retrieve the mail object from the server."
 msgstr "Fehler beim Laden des Mail-Objekts vom Server."
 
-#: umc/js/udm/DetailPage.js:1916
+#: umc/js/udm/DetailPage.js:1932
 msgid "Failed to retrieve the network object from the server."
 msgstr "Fehler beim Laden des Netz-Objekts vom Server."
 
-#: umc/js/udm/DetailPage.js:1923
+#: umc/js/udm/DetailPage.js:1939
 msgid "Failed to retrieve the policy from the server."
 msgstr "Fehler beim Laden der Richtlinie vom Server."
 
-#: umc/js/udm/DetailPage.js:1924
+#: umc/js/udm/DetailPage.js:1940
 msgid "Failed to retrieve the portal object from the server."
 msgstr "Fehler beim Laden des Portal-Objekts vom Server."
 
-#: umc/js/udm/DetailPage.js:1920
+#: umc/js/udm/DetailPage.js:1936
 msgid "Failed to retrieve the printer from the server."
 msgstr "Fehler beim Laden des Druckers vom Server."
 
-#: umc/js/udm/DetailPage.js:1919
+#: umc/js/udm/DetailPage.js:1935
 msgid "Failed to retrieve the share from the server."
 msgstr "Fehler beim Laden der Freigabe vom Server."
 
-#: umc/js/udm/DetailPage.js:1913
+#: umc/js/udm/DetailPage.js:1929
 msgid "Failed to retrieve the user from the server."
 msgstr "Fehler beim Laden des Benutzers vom Server."
 
@@ -1258,7 +1258,8 @@ msgstr[1] "Bitte bestätigen Sie das Löschen der %d ausgewählten Richtlinien:"
 msgid "Please confirm the removal of the portal object:"
 msgid_plural "Please confirm the removal of the %d selected portal objects"
 msgstr[0] "Bitte bestätigen Sie das Löschen des ausgewählten Portal-Objekts:"
-msgstr[1] "Bitte bestätigen Sie das Löschen der %d ausgewählten Portal-Objekte:"
+msgstr[1] ""
+"Bitte bestätigen Sie das Löschen der %d ausgewählten Portal-Objekte:"
 
 #: umc/js/udm.js:1702
 #, javascript-format
@@ -1693,7 +1694,7 @@ msgid_plural "The LDAP objects are part of the Active Directory domain."
 msgstr[0] "Das LDAP-Objekt \"%s\" ist Teil einer Active Directory Domäne."
 msgstr[1] "Die LDAP-Objekte sind Teil einer Active Directory Domäne."
 
-#: umc/js/udm/DetailPage.js:1791
+#: umc/js/udm/DetailPage.js:1804
 msgid "The LDAP object could not be saved: %(details)s"
 msgstr "Das LDAP-Objekt konnte nicht gespeichert werden: %(details)s"
 
@@ -1704,7 +1705,7 @@ msgid_plural "The Nagios objects are part of the Active Directory domain."
 msgstr[0] "Das Nagios-Objekt \"%s\" ist Teil einer Active Directory Domäne."
 msgstr[1] "Die Nagios-Objekte sind Teil einer Active Directory Domäne."
 
-#: umc/js/udm/DetailPage.js:1798
+#: umc/js/udm/DetailPage.js:1811
 msgid "The changes have been successfully applied."
 msgstr "Die Änderungen wurden erfolgreich übernommen."
 
@@ -1723,7 +1724,7 @@ msgstr "Der Container, in dem das LDAP-Objekt erzeugt wird."
 msgid "The exact object type of the new LDAP object."
 msgstr "Der genaue Objekttyp des neuen LDAP-Objekts."
 
-#: umc/js/udm/DetailPage.js:1780
+#: umc/js/udm/DetailPage.js:1793
 msgid "The following LDAP objects could not be saved:"
 msgstr "Die/das folgende(n) Objekt(e) konnte(n) nicht gespeichert werden:"
 
@@ -1739,7 +1740,7 @@ msgstr ""
 msgid "The following object(s) could not be deleted:"
 msgstr "Die/das folgende(n) Objekt(e) konnte(n) nicht gelöscht werden:"
 
-#: umc/js/udm/DetailPage.js:1847
+#: umc/js/udm/DetailPage.js:1863
 msgid "The following properties could not be validated:"
 msgstr "Die folgenden Eigenschaften konnten nicht validiert werden:"
 
@@ -1850,7 +1851,7 @@ msgid_plural "The users are part of the Active Directory domain."
 msgstr[0] "Der Benutzer \"%s\" ist Teil einer Active Directory Domäne."
 msgstr[1] "Die Benutzer sind Teil einer Active Directory Domäne."
 
-#: umc/js/udm/DetailPage.js:1979
+#: umc/js/udm/DetailPage.js:1995
 msgid "There are unsaved changes. Are you sure to cancel?"
 msgstr "Einige Änderungen sind noch nicht gespeichert. Möchten Sie abbrechen?"
 
