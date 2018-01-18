@@ -1737,12 +1737,20 @@ define([
 				properties: valsNonEmpty
 			};
 			var validationDeferred = this.umcpCommand('udm/validate', params);
+			var portalCollisionDeferred = this.umcpCommand('udm/portal_collision', {
+				object_type: this._editedObjType,
+				old_computers: this._receivedObjFormData.portalComputers || [],
+				new_computers: vals.portalComputers || []
+			});
 			var saveDeferred = new Deferred();
-			validationDeferred.then(lang.hitch(this, function(data) {
-				// collisionDeferred.then(lang.hitch(this, function() {
-				this.portalCollisionCheck(vals).then(lang.hitch(this, function() {
-					// if all elements are valid, save element
-					if (this._parseValidation(data.result)) {
+			all({
+				validationDeferred: validationDeferred,
+				portalCollisionDeferred: portalCollisionDeferred
+			}).then(lang.hitch(this, function(data) {
+				// if all elements are valid, save element
+				if (this._parseValidation(data.validationDeferred.result)) {
+					// if a portal collision exists ask the user if he wants to save anyway
+					this._parsePortalCollision(data.portalCollisionDeferred.result).then(lang.hitch(this, function() {
 						var deferred = null;
 						topic.publish('/umc/actions', 'udm', this._parentModule.moduleFlavor, 'edit', 'save');
 						// check whether the internal cache needs to be reset
@@ -1797,7 +1805,7 @@ define([
 								saveDeferred.resolve();
 							} else if (success) {
 								// everything ok, close page
-								this._showUsernameTooLongWarning(data.result);
+								this._showUsernameTooLongWarning(data.validationDeferred.result);
 								this.onCloseTab();
 								this.onSave(result.$dn$, this.objectType);
 								saveDeferred.resolve();
@@ -1809,12 +1817,12 @@ define([
 						}), lang.hitch(this, function() {
 							saveDeferred.reject();
 						}));
-					} else {
+					}), function() {
 						saveDeferred.reject();
-					}
-				}), lang.hitch(this, function() {
+					});
+				} else {
 					saveDeferred.reject();
-				}));
+				}
 			}));
 			var validatedAndSaved = all([validationDeferred, saveDeferred]);
 			this.standbyDuring(validatedAndSaved);
@@ -1890,6 +1898,37 @@ define([
 			}
 
 			return allValid;
+		},
+
+		_parsePortalCollision: function(collisionsList) {
+			var deferred = new Deferred();
+
+			if (collisionsList.length) {
+				var message = '<p>Some of the specified computers already have a portal set</p><ul>';
+				array.forEach(collisionsList, function(collisionObj) {
+					// TODO encoding
+					message += '<li>' + collisionObj.name + ' uses ' + collisionObj.portal + '</li>';
+				});
+				message += '</ul>';
+				dialog.confirm(message, [{
+						name: 'cancel',
+						label: 'Cancel',
+						default: true
+					}, {
+						name: 'save',
+						label: 'Save anyway'
+				}]).then(function(choice) {
+					if (choice === 'save') {
+						deferred.resolve();
+					} else {
+						deferred.reject();
+					}
+				});
+			} else {
+				deferred.resolve();
+			}
+
+			return deferred;
 		},
 
 		_setWidgetInvalid: function(name) {
@@ -1971,48 +2010,6 @@ define([
 			}
 
 			return newVals;
-		},
-
-		portalCollisionCheck: function(vals) {
-			var collisionDeferred = new Deferred();
-			if (this.objectType === 'settings/portal' && 'portalComputers' in vals) {
-				var computersToCheck = [];
-				array.forEach(vals.portalComputers, lang.hitch(this, function(iPortalComputer) {
-					if (this._receivedObjFormData.portalComputers.indexOf(iPortalComputer) === -1) {
-						computersToCheck.push(iPortalComputer);
-					}
-				}));
-				this.umcpCommand('udm/portal_collision', {computers_to_check: computersToCheck}).then(lang.hitch(this, function(response) {
-					if (response.result.length) {
-						var message = '<p>Some of the specified computers already have a portal set</p><ul>';
-						array.forEach(response.result, function(iComputer) {
-							// TODO encoding
-							message += '<li>' + iComputer.name + ' uses ' + iComputer.portal + '</li>';
-						});
-						message += '</ul>';
-						dialog.confirm(message, [{
-								name: 'cancel',
-								label: 'Cancel',
-								default: true
-							}, {
-								name: 'save',
-								label: 'Save anyway'
-						}]).then(lang.hitch(this, function(choice) {
-							if (choice === 'save') {
-								collisionDeferred.resolve();
-							} else {
-								collisionDeferred.reject();
-							}
-						}))
-					} else {
-						collisionDeferred.resolve();
-					}
-				}));
-			} else {
-				collisionDeferred.resolve();
-			}
-
-			return collisionDeferred;
 		},
 
 		confirmClose: function() {

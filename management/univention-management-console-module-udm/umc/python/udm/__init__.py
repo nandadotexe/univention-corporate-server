@@ -845,15 +845,18 @@ class Instance(Base, ProgressMixin):
 		return module.policies
 
 	@simple_response
-	def portal_collision(self, computers_to_check):
+	def portal_collision(self, object_type, old_computers, new_computers):
+		if object_type != 'settings/portal':
+			return []
+
 		collisions = []
 		computer_module = UDM_Module('computers/computer')
+		computers_to_check = [new_comp for new_comp in new_computers if new_comp not in old_computers]
 		for computer in computers_to_check:
 			compobj = computer_module.get(computer)
 			computerPortal = compobj.lo.getAttr(compobj.dn, 'univentionComputerPortal')
 			if len(computerPortal):
 				collisions.append({
-					'dn': computer,
 					'name': compobj['name'],
 					'portal': computerPortal[0],
 				})
