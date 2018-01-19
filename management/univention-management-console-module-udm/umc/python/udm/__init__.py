@@ -854,9 +854,10 @@ class Instance(Base, ProgressMixin):
 		for computer in computers_to_check:
 			compobj = get_module(None, computer).get(computer)
 			if compobj['portal']:
+				portalobj = UDM_Module('settings/portal').get(compobj['portal'])
 				collisions.append({
-					'name': compobj['name'],
-					'portal': compobj['portal']
+					'computerName': compobj['name'],
+					'portalName': portalobj['name']
 				})
 		return collisions
 

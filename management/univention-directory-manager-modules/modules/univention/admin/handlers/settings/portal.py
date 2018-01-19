@@ -178,7 +178,7 @@ property_descriptions = {
 	),
 	'portalComputers': univention.admin.property(
 		short_description=_('Shown on computers'),
-		long_description='TODO',
+		long_description=_('This portal will be used for the given computers'),
 		syntax=univention.admin.syntax.PortalComputerDN,
 		multivalue=True,
 		dontsearch=True,
@@ -277,14 +277,14 @@ class object(univention.admin.handlers.simpleLdap):
 		from univention.management.console.modules.udm.udm_ldap import get_module
 		# TODO do not import here ?
 
-		# set univentionComputerPortal attribute of old portal computers to blank
+		# set portal attribute of old computers to blank
 		for computer in old_portal_computers:
 			if computer not in new_portal_computers:
 				compobj = get_module(None, computer).get(computer)
 				compobj['portal'] = ''
 				compobj.modify()
 
-		# set univentionComputerPortal attribute of new portal computers to this portal
+		# set portal attribute of new computers to this portal
 		for computer in new_portal_computers:
 			if computer not in old_portal_computers:
 				compobj = get_module(None, computer).get(computer)

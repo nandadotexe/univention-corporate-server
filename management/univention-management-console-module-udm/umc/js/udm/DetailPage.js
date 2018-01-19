@@ -40,6 +40,7 @@ define([
 	"dojo/dom-class",
 	"dojo/topic",
 	"dojo/json",
+	"dojox/html/entities",
 	"dijit/TitlePane",
 	"umc/render",
 	"umc/tools",
@@ -63,7 +64,7 @@ define([
 	"umc/i18n!umc/modules/udm",
 	"dijit/registry",
 	"umc/_all"
-], function(declare, lang, array, on, Deferred, all, when, construct, domClass, topic, json, TitlePane, render, tools, dialog, ContainerWidget, MultiInput, ComboBox, Form, Page, StandbyMixin, TabController, StackContainer, Text, Button, LabelPane, Template, OverwriteLabel, UMCPBundle, UsernameMaxLengthChecker, cache, _) {
+], function(declare, lang, array, on, Deferred, all, when, construct, domClass, topic, json, entities, TitlePane, render, tools, dialog, ContainerWidget, MultiInput, ComboBox, Form, Page, StandbyMixin, TabController, StackContainer, Text, Button, LabelPane, Template, OverwriteLabel, UMCPBundle, UsernameMaxLengthChecker, cache, _) {
 
 	var _StandbyPage = declare([Page, StandbyMixin], {});
 
@@ -1740,7 +1741,7 @@ define([
 			var portalCollisionDeferred = this.umcpCommand('udm/portal_collision', {
 				object_type: this._editedObjType,
 				old_computers: this.operation === 'add' ? [] : this._receivedObjFormData.portalComputers || [],
-				new_computers: this.operation === 'add' ? [] : vals.portalComputers || []
+				new_computers: vals.portalComputers || []
 			});
 			var saveDeferred = new Deferred();
 			all({
@@ -1904,19 +1905,21 @@ define([
 			var deferred = new Deferred();
 
 			if (collisionsList.length) {
-				var message = '<p>Some of the specified computers already have a portal set</p><ul>';
+				var message = lang.replace('<p>{0}</p><ul>', [_('Some of the specified computers already have a portal set')]);
 				array.forEach(collisionsList, function(collisionObj) {
-					// TODO encoding
-					message += '<li>' + collisionObj.name + ' uses ' + collisionObj.portal + '</li>';
+					message += lang.replace('<li>{0}</li>', [_('"%(computer)s" uses the portal "%(portal)s"', {
+						computer: entities.encode(collisionObj.computerName),
+						portal: entities.encode(collisionObj.portalName)
+					})]);
 				});
 				message += '</ul>';
 				dialog.confirm(message, [{
 						name: 'cancel',
-						label: 'Cancel',
+						label: _('Cancel'),
 						default: true
 					}, {
 						name: 'save',
-						label: 'Save anyway'
+						label: _('Save anyway')
 				}]).then(function(choice) {
 					if (choice === 'save') {
 						deferred.resolve();
