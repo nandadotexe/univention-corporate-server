@@ -34,6 +34,7 @@ define([
 	"dojo/_base/array",
 	"dojo/_base/kernel",
 	"dijit/registry",
+	"dojo/Deferred",
 	"dojo/on",
 	"dojo/dom",
 	"dojo/dom-construct",
@@ -41,13 +42,20 @@ define([
 	"dojox/string/sprintf",
 	"./PortalCategory",
 	"umc/tools",
+	"umc/store",
+	"umc/json",
+	"umc/dialog",
+	"umc/widgets/Button",
+	"umc/widgets/Form",
+	"umc/widgets/ContainerWidget",
+	"umc/modules/udm/cache",
 	"umc/i18n/tools",
 	// portal.json -> contains entries of this portal as specified in the LDAP directory
 	"umc/json!/univention/portal/portal.json",
 	// apps.json -> contains all locally installed apps
 	"umc/json!/univention/portal/apps.json",
 	"umc/i18n!portal"
-], function(declare, lang, array, kernel, registry, on, dom, domConstruct, domClass, sprintf, PortalCategory, tools, i18nTools, portalContent, installedApps, _) {
+], function(declare, lang, array, kernel, registry, Deferred, on, dom, domConstruct, domClass, sprintf, PortalCategory, tools, store, json, dialog, Button, Form, ContainerWidget, cache, i18nTools, portalContent, installedApps, _) {
 
 	// convert IPv6 addresses to their canonical form:
 	//   ::1:2 -> 0000:0000:0000:0000:0000:0000:0001:0002
@@ -67,7 +75,7 @@ define([
 
 		// replace IPv4 address inside IPv6 address
 		if (tools.isIPv4Address(parts[parts.length - 1])) {
-			// parse bytes of IPv4 address 
+			// parse bytes of IPv4 address
 			var ipv4Parts = parts[parts.length - 1].split('.');
 			for (var i = 0; i < 4; ++i) {
 				var byte = parseInt(ipv4Parts[i], 10);
@@ -93,7 +101,7 @@ define([
 		parts = array.map(parts, function(ipart) {
 			return sprintf('%04s', ipart);
 		});
-	
+
 		return parts.join(':');
 	};
 
@@ -249,13 +257,13 @@ define([
 		// return the best match
 		return links;
 	};
-	
+
 	var getHighestRankedLink = function(browserURI, links) {
 		return _rankLinks(browserURI, links)[0].link || '#';
 	};
 
 	var getLocalLinks = function(browserHostname, serverFQDN, links) {
-		// check whether there is any relative link 
+		// check whether there is any relative link
 		var relativeLinks = array.filter(links, function(ilink) {
 			return _isRelativeLink(ilink);
 		});
@@ -330,7 +338,7 @@ define([
 		} catch(err) { }
 	}
 
-	// remove display=none from header 
+	// remove display=none from header
 	try {
 		domClass.remove(dom.byId('umcHeaderRight'), 'dijitDisplayNone');
 	} catch(err) { }
@@ -338,20 +346,138 @@ define([
 	var locale = i18nTools.defaultLang().replace(/-/, '_');
 	return {
 		portalCategories: null,
+		editMode: false,
 
 		_initStyling: function() {
+			on(dom.byId('portalLogo'), 'click', lang.hitch(this, function() {
+				if (!this.editMode) {
+					return;
+				}
+
+				this._editSinglePortalProp('logo');
+			}));
+			on(dom.byId('portalTitle'), 'click', lang.hitch(this, function() {
+				if (!this.editMode) {
+					return;
+				}
+
+				this._editSinglePortalProp('displayName');
+			}));
+		},
+
+		_updateStyling: function() {
 			// set title
 			var portal = portalContent.portal;
 			var title = dom.byId('portalTitle');
 			var portalName = lang.replace(portal.name[locale] || portal.name.en_US || '', tools._status);
 			title.innerHTML = portalName;
 			document.title = portalName;
+			domClass.toggle(title, 'editMode', this.editMode);
 
 			// custom logo
-			if (portal.logo) {
-				var img = domConstruct.toDom(lang.replace('<img src="{logo}" class="umcCustomLogo" />', portal));
-				domConstruct.place(img, title, 'before');
-			}
+			var logoNode = dom.byId('portalLogo');
+			// TODO: use ? with timestamp to prevent caching and always get newest image, feels hacky?
+			logoNode.src = portal.logo ? lang.replace('{0}?{1}', [portal.logo, Date.now()]) : '/univention/portal/portal-logo-dummy.svg';
+			domClass.toggle(logoNode, 'dijitDisplayNone', (!portal.logo && !this.editMode));
+			domClass.toggle(logoNode, 'editMode', this.editMode);
+			// TODO tooltip on hover in edit mode
+		},
+
+		_editSinglePortalProp: function(propName) {
+			console.log('edit portal prop: ' + propName);
+			var moduleStore = store('$dn$', 'udm', 'settings/portal_all');
+			var moduleCache = cache.get('settings/portal_all');
+
+			moduleCache.getProperties('settings/portal', portalContent.portal.dn).then(lang.hitch(this, function(portalProps) {
+				var prop = array.filter(portalProps, function(iprop) {
+					return iprop.id === propName;
+				})[0];
+				
+				var requireDeffered = new Deferred();
+
+				// require the necessary widget to edit the given property
+				// TODO require iprop.type with '/' in them
+				// TODO error handling
+				require(['umc/widgets/' + prop.type], function() {
+					requireDeffered.resolve();
+				});
+
+				requireDeffered.then(lang.hitch(this, function() {
+					var form = new Form({
+						widgets: [prop],
+						layout: [prop.id],
+						moduleStore: moduleStore,
+						onSubmit: lang.hitch(this, function(e) {
+							if (e) {
+								e.preventDefault();
+							}
+
+							// TODO validate and safe
+							// reset settings from last validation
+							tools.forIn(form._widgets, function(iname, iwidget) {
+								if (iwidget.setValid) {
+									iwidget.setValid(null);
+								}
+							});
+
+							// validate all widgets to mark invalid/required fields
+							form.validate();
+							// TODO return if not valid?
+
+							tools.umcpCommand('udm/validate', {
+								objectType: 'settings/portal',
+								properties: {
+									// TODO probably no good browser support
+									[prop.id]: form._widgets[prop.id].get('value')
+								}
+							}).then(function(result) {
+								// TODO check for non valid values
+								// and set the widget to valid=false
+								console.log(result);
+							});
+							
+							form.moduleStore.put({
+								'$dn$': portalContent.portal.dn,
+								// TODO probably no good browser support
+								[prop.id]: form._widgets[prop.id].get('value')
+							}).then(lang.hitch(this, function(result) {
+								// TODO: check result and make error handling
+								json.load('/univention/portal/portal.json', require, lang.hitch(this, function(result) {
+									portalContent = result;
+									this._updateStyling();	
+								}));
+							}), function(e) {
+								console.log('error');
+								console.log(e);
+							});
+
+						})
+					});
+					form.load(portalContent.portal.dn).then(function() {
+						form.ready().then(function() {
+							// TODO use dialog.confirmForm instead?
+							var deferred = dialog.confirm(form, [{
+								name: 'cancel',
+								label: 'Cancel', // TODO translation
+								callback: function(r) {
+									console.log('cancel clicked');
+									// TODO hide seems to be immediate; no animation
+									deferred.dialog.hide().then(function() {
+										deferred.dialog.destroyRecursive();
+									});
+								}
+							}, {
+								name: 'submit',
+								label: 'Save', // TODO translation
+								callback: function() {
+									console.log('submit clicked');
+									form.onSubmit();
+								}
+							}]);
+						});
+					});
+				}));
+			}));
 		},
 
 		_createCategories: function() {
@@ -425,8 +551,41 @@ define([
 			this.content = dom.byId('content');
 			this.search = registry.byId('umcLiveSearch');
 			this.search.on('search', lang.hitch(this, 'filterPortal'));
+			// TODO: dummy check. make a real check if the logged in user is authorized
+			// to edit the portal. probably via groups
+			if (tools.status('username') === 'Administrator') {
+				this.portalEditModeToggleButton = new Button({
+					iconClass: 'umcEditIcon',
+					'class': 'umcPortalEditButton umcFlatButton',
+					description: 'Activate edit mode', // TODO wording / translation
+					callback: lang.hitch(this, 'toggleEditMode')
+				});
+				domConstruct.place(this.portalEditModeToggleButton.domNode, dom.byId('umcHeaderRight'), 'first');
+
+				this.portalEditModeBar = new ContainerWidget({
+					'class': 'portalEditModeBar'
+				});
+				var closeButton = new Button({
+					iconClass: 'umcCrossIcon',
+					'class': 'umcPortalEditCloseButton',
+					description: 'Close Edit mode',
+					callback: lang.hitch(this, 'toggleEditMode')
+				});
+				this.portalEditModeBar.addChild(closeButton);
+				domConstruct.place(this.portalEditModeBar.domNode, dom.byId('content'), 'after');
+			}
 			this._initStyling();
+			this._updateStyling();
 			this._createCategories();
+		},
+
+		toggleEditMode: function() {
+			this.editMode = !this.editMode;
+			this.portalEditModeToggleButton.set('iconClass', (this.editMode ? 'umcQuitEditIcon' : 'umcEditIcon'))
+			this.portalEditModeToggleButton.set('description', (this.editMode ? 'Deactivate edit mode' : 'Activate edit mode'));
+			// domClass.toggle(this.portalEditModeBar.domNode, 'dijitDisplayNone', !this.editMode);
+			domClass.toggle(dom.byId('portal'), 'editMode', this.editMode);
+			this._updateStyling();
 		},
 
 		filterPortal: function() {
