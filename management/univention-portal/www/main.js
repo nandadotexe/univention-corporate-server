@@ -400,24 +400,25 @@ define([
 					return array.indexOf(propNames, iprop.id) >= 0;
 				});
 				
-				var requireDeffered = new Deferred();
+				var requireDeferred = new Deferred();
 
 				// require the necessary widgets to edit the given property
-				// TODO require iprop.type with '/' in them
+				// TODO require iprop.type with '/' in them without 'umc/widgets'
 				// TODO error handling
+				// FIXME refactor into function
 				var deferredList = [];
 				array.forEach(props, function(iprop) {
-					var d = new Deferred();
-					deferredList.push(d);
+					var deferred = new Deferred();
+					deferredList.push(deferred);
 					require(['umc/widgets/' + iprop.type], function() {
-						d.resolve();
+						deferred.resolve();
 					});
 				});
 				all(deferredList).then(function() {
-					requireDeffered.resolve();
+					requireDeferred.resolve();
 				});
 
-				requireDeffered.then(lang.hitch(this, function() {
+				requireDeferred.then(lang.hitch(this, function() {
 					var form = new Form({
 						widgets: props,
 						layout: propNames,
@@ -427,7 +428,7 @@ define([
 								e.preventDefault();
 							}
 
-							// TODO validate and safe
+							// TODO validate
 							// reset settings from last validation
 							tools.forIn(form._widgets, function(iname, iwidget) {
 								if (iwidget.setValid) {
@@ -460,108 +461,6 @@ define([
 								putParams[iprop.id] = form._widgets[iprop.id].get('value');
 							});
 							form.moduleStore.put(putParams).then(lang.hitch(this, function(result) {
-								// TODO: check result and make error handling
-								json.load('/univention/portal/portal.json', require, lang.hitch(this, function(result) {
-									portalContent = result;
-									this._updateStyling();	
-								}));
-							}), function(e) {
-								console.log('error');
-								console.log(e);
-							});
-
-						})
-					});
-					form.startup();
-					form.load(portalContent.portal.dn).then(function() {
-						form.ready().then(function() {
-							// TODO use dialog.confirmForm instead?
-							// TODO better title for the dialog
-							var deferred = dialog.confirm(form, [{
-								name: 'cancel',
-								label: 'Cancel', // TODO translation
-								callback: function(r) {
-									console.log('cancel clicked');
-									// TODO hide seems to be immediate; no animation
-									deferred.dialog.hide().then(function() {
-										deferred.dialog.destroyRecursive();
-									});
-								}
-							}, {
-								name: 'submit',
-								label: 'Save', // TODO translation
-								callback: function() {
-									console.log('submit clicked');
-									form.onSubmit();
-								}
-							}], 'Edit portal property');
-							standbyWidget.hide();
-						});
-					});
-				}));
-			}));
-		},
-
-		_editSinglePortalProp: function(propName) {
-			console.log('edit portal prop: ' + propName);
-			var standbyWidget = this.standbyWidget;
-			standbyWidget.show();
-			var moduleStore = store('$dn$', 'udm', 'settings/portal_all');
-			var moduleCache = cache.get('settings/portal_all');
-
-			moduleCache.getProperties('settings/portal', portalContent.portal.dn).then(lang.hitch(this, function(portalProps) {
-				var prop = array.filter(portalProps, function(iprop) {
-					return iprop.id === propName;
-				})[0];
-				
-				var requireDeffered = new Deferred();
-
-				// require the necessary widget to edit the given property
-				// TODO require iprop.type with '/' in them
-				// TODO error handling
-				require(['umc/widgets/' + prop.type], function() {
-					requireDeffered.resolve();
-				});
-
-				requireDeffered.then(lang.hitch(this, function() {
-					var form = new Form({
-						widgets: [prop],
-						layout: [prop.id],
-						moduleStore: moduleStore,
-						onSubmit: lang.hitch(this, function(e) {
-							if (e) {
-								e.preventDefault();
-							}
-
-							// TODO validate and safe
-							// reset settings from last validation
-							tools.forIn(form._widgets, function(iname, iwidget) {
-								if (iwidget.setValid) {
-									iwidget.setValid(null);
-								}
-							});
-
-							// validate all widgets to mark invalid/required fields
-							form.validate();
-							// TODO return if not valid?
-
-							tools.umcpCommand('udm/validate', {
-								objectType: 'settings/portal',
-								properties: {
-									// TODO probably no good browser support
-									[prop.id]: form._widgets[prop.id].get('value')
-								}
-							}).then(function(result) {
-								// TODO check for non valid values
-								// and set the widget to valid=false
-								console.log(result);
-							});
-							
-							form.moduleStore.put({
-								'$dn$': portalContent.portal.dn,
-								// TODO probably no good browser support
-								[prop.id]: form._widgets[prop.id].get('value')
-							}).then(lang.hitch(this, function(result) {
 								// TODO: check result and make error handling
 								json.load('/univention/portal/portal.json', require, lang.hitch(this, function(result) {
 									portalContent = result;
@@ -688,6 +587,7 @@ define([
 				return;
 			}
 
+			// create standby widget that covers the whole screen when loading form dialogs
 			this.standbyWidget = new Standby({
 				target: dom.byId('portal'),
 				zIndex: 100,
@@ -698,13 +598,16 @@ define([
 			this.standbyWidget.startup();
 
 			
+			// create floating button to enter edit mode
 			this.portalEditFloatingButton = put(dom.byId('portal'), 'div.portalEditFloatingButton div.icon <');
 			on(this.portalEditFloatingButton, 'click', lang.hitch(this, 'setEditMode', true));
 
+			// create toolbar at bottom to exit edit mode
+			// and have options to edit portal options
+			// that are not (easily) representable in the portal directly
 			this.portalEditBar = new ContainerWidget({
 				'class': 'portalEditBar'
 			});
-
 			var appearanceButton = new Button({
 				iconClass: '',
 				'class': 'portalEditBarAppearanceButton umcFlatButton',
@@ -715,12 +618,11 @@ define([
 			var closeButton = new Button({
 				iconClass: 'umcCrossIcon',
 				'class': 'portalEditBarCloseButton umcFlatButton',
-				description: 'Close Edit mode',
+				// description: 'Close Edit mode',
 				callback: lang.hitch(this, 'setEditMode', false)
 			});
 			this.portalEditBar.addChild(closeButton);
-
-			domConstruct.place(this.portalEditBar.domNode, dom.byId('content'), 'after');
+			put(dom.byId('portal'), this.portalEditBar.domNode);
 		},
 
 		setEditMode: function(active) {
