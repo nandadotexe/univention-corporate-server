@@ -1,3 +1,9 @@
+univention-mail-postfix (12.0.0-9) unstable; urgency=low
+
+  * Bug #46102: remove cyrus related code
+
+ -- Daniel Troeder <troeder@univention.de>  Tue, 23 Jan 2018 13:25:16 +0100
+
 univention-mail-postfix (12.0.0-8) unstable; urgency=low
 
   * Bug #45607: allow optional usage of postscreen
