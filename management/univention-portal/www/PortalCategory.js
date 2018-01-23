@@ -80,7 +80,8 @@ define([
 			this.grid = new PortalGallery({
 				store: store,
 				domainName: this.domainName,
-				queryOptions: queryOptions
+				queryOptions: queryOptions,
+				category: this.category
 			});
 
 			domConstruct.place(heading, this.containerNode);
@@ -95,6 +96,10 @@ define([
 			var appsDisplayed = domQuery('div[class*="dgrid-row"]', this.grid.contentNode);
 			var hideCategory = appsDisplayed.length === 0;
 			domClass.toggle(this.domNode, 'dijitDisplayNone', hideCategory);
+		},
+
+		onAddEntry: function(category) {
+			// stub
 		}
 	});
 });

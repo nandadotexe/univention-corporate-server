@@ -35,6 +35,7 @@ define([
 	"dojo/_base/kernel",
 	"dijit/registry",
 	"dojo/Deferred",
+	"dojo/aspect",
 	"dojo/on",
 	"dojo/dom",
 	"dojo/dom-construct",
@@ -43,12 +44,14 @@ define([
 	"dojox/string/sprintf",
 	"dojox/widget/Standby",
 	"./PortalCategory",
+	"dijit/Dialog",
 	"umc/tools",
 	"umc/store",
 	"umc/json",
 	"umc/dialog",
 	"umc/widgets/Button",
 	"umc/widgets/Form",
+	"umc/widgets/Wizard",
 	"umc/widgets/ContainerWidget",
 	"umc/modules/udm/cache",
 	"put-selector/put",
@@ -58,7 +61,7 @@ define([
 	// apps.json -> contains all locally installed apps
 	"umc/json!/univention/portal/apps.json",
 	"umc/i18n!portal"
-], function(declare, lang, array, kernel, registry, Deferred, on, dom, domConstruct, domClass, all, sprintf, Standby, PortalCategory, tools, store, json, dialog, Button, Form, ContainerWidget, cache, put, i18nTools, portalContent, installedApps, _) {
+], function(declare, lang, array, kernel, registry, Deferred, aspect, on, dom, domConstruct, domClass, all, sprintf, Standby, PortalCategory, Dialog, tools, store, json, dialog, Button, Form, Wizard, ContainerWidget, cache, put, i18nTools, portalContent, installedApps, _) {
 
 	// convert IPv6 addresses to their canonical form:
 	//   ::1:2 -> 0000:0000:0000:0000:0000:0000:0001:0002
@@ -400,25 +403,7 @@ define([
 					return array.indexOf(propNames, iprop.id) >= 0;
 				});
 				
-				var requireDeferred = new Deferred();
-
-				// require the necessary widgets to edit the given property
-				// TODO require iprop.type with '/' in them without 'umc/widgets'
-				// TODO error handling
-				// FIXME refactor into function
-				var deferredList = [];
-				array.forEach(props, function(iprop) {
-					var deferred = new Deferred();
-					deferredList.push(deferred);
-					require(['umc/widgets/' + iprop.type], function() {
-						deferred.resolve();
-					});
-				});
-				all(deferredList).then(function() {
-					requireDeferred.resolve();
-				});
-
-				requireDeferred.then(lang.hitch(this, function() {
+				this._requireWidgets(props).then(lang.hitch(this, function() {
 					var form = new Form({
 						widgets: props,
 						layout: propNames,
@@ -515,7 +500,7 @@ define([
 
 			if (portal.showApps) {
 				var apps = this._getApps(installedApps, locale, protocol, isIPv4, isIPv6);
-				this._addCategory(_('Local Apps'), apps);
+				this._addCategory(_('Local Apps'), apps, 'localApps');
 			}
 			array.forEach(['service', 'admin'], lang.hitch(this, function(category) {
 				var categoryEntries = array.filter(entries, function(entry) {
@@ -529,7 +514,7 @@ define([
 				} else if (category === 'service') {
 					heading = _('Applications');
 				}
-				this._addCategory(heading, apps, category === 'service');
+				this._addCategory(heading, apps, category);
 			}));
 		},
 
@@ -555,7 +540,7 @@ define([
 			return apps;
 		},
 
-		_addCategory: function(heading, apps, sorting) {
+		_addCategory: function(heading, apps, category) {
 			if (!heading || !apps.length) {
 				return;
 			}
@@ -563,11 +548,95 @@ define([
 				heading: heading,
 				apps: apps,
 				domainName: tools.status('domainname'),
-				sorting: sorting || false
+				sorting: (category === 'service'),
+				category: category
 			});
-			this.content.appendChild(portalCategory.domNode);
 			portalCategory.startup();
+			aspect.after(portalCategory.grid, 'onAddEntry', lang.hitch(this, function(category) {
+				this.addPortalEntry(category);
+			}), true);
+			this.content.appendChild(portalCategory.domNode);
 			this.portalCategories.push(portalCategory);
+		},
+
+		// TODO copy pasted from udm/DetailPage.js
+		_requireWidgets: function(properties) {
+			var deferreds = [];
+			array.forEach(properties, function(prop) {
+				if (typeof prop.type == 'string') {
+					var path = prop.type.indexOf('/') < 0 ? 'umc/widgets/' + prop.type : prop.type;
+					var errHandler;
+					var deferred = new Deferred();
+					var loaded = function() {
+						deferred.resolve();
+						errHandler.remove();
+					};
+					errHandler = require.on('error', loaded);
+					require([path], loaded);
+					deferreds.push(deferred);
+				}
+			});
+			return all(deferreds);
+		},
+
+		addPortalEntry: function(category) {
+			console.log('add portal entry');
+			var standbyWidget = this.standbyWidget;
+			standbyWidget.show();
+			var moduleStore = store('$dn$', 'udm', 'settings/portal_all');
+			var moduleCache = cache.get('settings/portal_all');
+
+			moduleCache.getProperties('settings/portal_entry').then(lang.hitch(this, function(portalEntryProps) {
+				console.log(portalEntryProps);
+
+				this._requireWidgets(portalEntryProps).then(lang.hitch(this, function() {
+					var wizard = new Wizard({
+						pages: [{
+							name: 'name',
+							widgets: [this._getPropFromArray(portalEntryProps, 'name')],
+							layout: ['name'],
+							// headerText: 'header text'
+						}, {
+							name: 'icon',
+							widgets: [this._getPropFromArray(portalEntryProps, 'icon')],
+							layout: ['icon'],
+							// headerText: ''
+						}, {
+							name: 'displayName',
+							widgets: [this._getPropFromArray(portalEntryProps, 'displayName')],
+							layout: ['displayName']
+						}, {
+							name: 'link',
+							widgets: [this._getPropFromArray(portalEntryProps, 'link')],
+							layout: ['link']
+						}, {
+							name: 'description',
+							widgets: [this._getPropFromArray(portalEntryProps, 'description')],
+							layout: ['description']
+						}]
+					});
+					on(wizard, 'cancel', lang.hitch(this, function() {
+						// TODO close dialog and destroy
+						console.log('cancel called');
+					}));
+					on(wizard, 'finished', lang.hitch(this, function(values) {
+						console.log('finished');
+						console.log(values);
+					}));
+					var dialog = new Dialog({
+						title: 'Create a portal entry',
+						content: wizard
+					});
+					dialog.show();
+					standbyWidget.hide();
+				}));
+			}));
+		},
+
+		_getPropFromArray: function(propArray, id) {
+			return array.filter(propArray, function(iProp) {
+				return iProp.id === id;
+			})[0];
 		},
 
 		start: function() {
@@ -629,6 +698,24 @@ define([
 			this.editMode = active;
 			domClass.toggle(dom.byId('portal'), 'editMode', this.editMode);
 			this._updateStyling();
+
+			var categories = array.filter(this.portalCategories, function(iPortalCategory) {
+				return array.indexOf(['service', 'admin'], iPortalCategory.category) >= 0;
+			});
+
+			// add/remove tile to categories for adding portal entries
+			array.forEach(categories, lang.hitch(this, function(iCategory) {
+				if (this.editMode) {
+					iCategory.grid.store.add({
+						portalEditAddEntryDummy: true,
+						category: iCategory.category,
+						id: '$portalEditAddEntryDummy$'
+					});
+				} else {
+					iCategory.grid.store.remove('$portalEditAddEntryDummy$');
+				}
+				iCategory.grid._renderQuery();
+			}));
 		},
 
 		filterPortal: function() {
@@ -636,7 +723,7 @@ define([
 			var searchQuery = this.search.getSearchQuery(searchPattern);
 
 			var query = function(app) {
-				return searchQuery.test(app);
+				return app.portalEditAddEntryDummy || searchQuery.test(app);
 			};
 
 			array.forEach(this.portalCategories, function(category) {

@@ -89,10 +89,6 @@ material-shadow(level)
 			&:after,
 			&
 				border-color: #282828
-
-		#portalLogo.editMode,
-		#portalTitle.editMode
-			cursor: pointer
 			
 
 	.content
@@ -138,6 +134,9 @@ material-shadow(level)
 				display: none
 	
 	&.editMode
+		#portalLogo.editMode,
+		#portalTitle.editMode
+			cursor: pointer
 		.content
 			margin-bottom: 52px
 		.portalEditFloatingButton
@@ -183,3 +182,13 @@ material-shadow(level)
 			width: 20px
 			height: 20px
 			margin: 18px;
+	
+	.portalEditAddEntryDummy
+		.cornerPiece
+			background-color: #d3d3d3
+		.dummyIcon
+			position: relative
+			width: 100%
+			height: 100%
+			background: url('/univention/portal/portal-add-entry-plus.svg') no-repeat center
+			background-size: 39px

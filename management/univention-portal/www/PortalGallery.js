@@ -32,12 +32,14 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/on",
 	"dojo/query",
 	"dojo/dom-class",
+	"dojo/dom-construct",
 	"put-selector/put",
 	"umc/tools",
 	"umc/widgets/AppGallery"
-], function(declare, lang, array, query, domClass, put, tools, AppGallery) {
+], function(declare, lang, array, on, query, domClass, domConstruct, put, tools, AppGallery) {
 	var _regIPv6Brackets = /^\[.*\]$/;
 
 	var find = function(list, testFunc) {
@@ -96,9 +98,32 @@ define([
 		},
 
 		renderRow: function(item) {
+			if (item.portalEditAddEntryDummy) {
+				var domString = '' +
+					'<div class="umcGalleryWrapperItem portalEditAddEntryDummy">' +
+						'<div class="cornerPiece boxShadow bl">' +
+							'<div class="hoverBackground"></div>' +
+						'</div>' +
+						'<div class="cornerPiece boxShadow tr">' +
+							'<div class="hoverBackground"></div>' +
+						'</div>' +
+						'<div class="cornerPiece boxShadowCover bl"></div>' +
+						'<div class="dummyIcon"></div>' +
+					'</div>';
+				var domNode = domConstruct.toDom(domString);
+				on(domNode, 'click', lang.hitch(this, 'onAddEntry', this.category));
+				return domNode;
+			}
+
 			var domNode = this.inherited(arguments);
 			put(domNode, 'a[href=$]', this._getWebInterfaceUrl(item), query('.umcGalleryItem', domNode)[0]);
 			return domNode;
+		},
+
+		// can't be used with dojo/on since this widget does not inherit from _WidgetBase
+		// use dojo/aspect.after
+		onAddEntry: function() {
+			// stub
 		},
 
 		_getProtocolAndPort: function(app) {
