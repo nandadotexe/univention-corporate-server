@@ -32,18 +32,15 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
-	"dojo/_base/kernel",
-	"dijit/registry",
 	"dojo/Deferred",
 	"dojo/aspect",
 	"dojo/on",
 	"dojo/dom",
-	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/promise/all",
 	"dojox/string/sprintf",
 	"dojox/widget/Standby",
-	"./PortalCategory",
+	"dijit/registry",
 	"dijit/Dialog",
 	"umc/tools",
 	"umc/store",
@@ -55,13 +52,14 @@ define([
 	"umc/widgets/ContainerWidget",
 	"umc/modules/udm/cache",
 	"put-selector/put",
+	"./PortalCategory",
 	"umc/i18n/tools",
 	// portal.json -> contains entries of this portal as specified in the LDAP directory
 	"umc/json!/univention/portal/portal.json",
 	// apps.json -> contains all locally installed apps
 	"umc/json!/univention/portal/apps.json",
 	"umc/i18n!portal"
-], function(declare, lang, array, kernel, registry, Deferred, aspect, on, dom, domConstruct, domClass, all, sprintf, Standby, PortalCategory, Dialog, tools, store, json, dialog, Button, Form, Wizard, ContainerWidget, cache, put, i18nTools, portalContent, installedApps, _) {
+], function(declare, lang, array, Deferred, aspect, on, dom, domClass, all, sprintf, Standby, registry, Dialog, tools, store, json, dialog, Button, Form, Wizard, ContainerWidget, cache, put, PortalCategory, i18nTools, portalContent, installedApps, _) {
 
 	// convert IPv6 addresses to their canonical form:
 	//   ::1:2 -> 0000:0000:0000:0000:0000:0000:0001:0002
