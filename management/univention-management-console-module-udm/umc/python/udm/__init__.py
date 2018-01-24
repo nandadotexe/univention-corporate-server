@@ -844,23 +844,6 @@ class Instance(Base, ProgressMixin):
 		module = self._get_module_by_request(request)
 		return module.policies
 
-	@simple_response
-	def portal_collision(self, object_type, old_computers, new_computers):
-		if object_type != 'settings/portal':
-			return []
-
-		collisions = []
-		computers_to_check = [new_comp for new_comp in new_computers if new_comp not in old_computers]
-		for computer in computers_to_check:
-			compobj = get_module(None, computer).get(computer)
-			if compobj['portal']:
-				portalobj = UDM_Module('settings/portal').get(compobj['portal'])
-				collisions.append({
-					'computerName': compobj['name'],
-					'portalName': portalobj['name']
-				})
-		return collisions
-
 	def validate(self, request):
 		"""Validates the correctness of values for properties of the
 		given object type. Therefor the syntax definition of the properties is used.

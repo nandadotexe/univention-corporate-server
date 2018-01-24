@@ -1738,89 +1738,76 @@ define([
 				properties: valsNonEmpty
 			};
 			var validationDeferred = this.umcpCommand('udm/validate', params);
-			var portalCollisionDeferred = this.umcpCommand('udm/portal_collision', {
-				object_type: this._editedObjType,
-				old_computers: this.operation === 'add' ? [] : this._receivedObjFormData.portalComputers || [],
-				new_computers: vals.portalComputers || []
-			});
 			var saveDeferred = new Deferred();
-			all({
-				validationDeferred: validationDeferred,
-				portalCollisionDeferred: portalCollisionDeferred
-			}).then(lang.hitch(this, function(data) {
+			validationDeferred.then(lang.hitch(this, function(data) {
 				// if all elements are valid, save element
-				if (this._parseValidation(data.validationDeferred.result)) {
-					// if a portal collision exists ask the user if he wants to save anyway
-					this._parsePortalCollision(data.portalCollisionDeferred.result).then(lang.hitch(this, function() {
-						var deferred = null;
-						topic.publish('/umc/actions', 'udm', this._parentModule.moduleFlavor, 'edit', 'save');
-						// check whether the internal cache needs to be reset
-						// as layout, property and default container information may have changed
-						var isExtendedAttribute = this.objectType == 'settings/extended_attribute';
-						var isUserTemplate = this.objectType == 'settings/usertemplate';
-						var isDefaultContainerSetting = this.objectType == 'settings/directory';
-						var isContainer = this.objectType == "container/cn" || this.objectType == "container/ou";
+				if (this._parseValidation(data.result)) {
+					var deferred = null;
+					topic.publish('/umc/actions', 'udm', this._parentModule.moduleFlavor, 'edit', 'save');
+					// check whether the internal cache needs to be reset
+					// as layout, property and default container information may have changed
+					var isExtendedAttribute = this.objectType == 'settings/extended_attribute';
+					var isUserTemplate = this.objectType == 'settings/usertemplate';
+					var isDefaultContainerSetting = this.objectType == 'settings/directory';
+					var isContainer = this.objectType == "container/cn" || this.objectType == "container/ou";
 
-						if (isExtendedAttribute || isUserTemplate || isDefaultContainerSetting || isContainer) {
-							cache.reset();
-						}
-						if (this._multiEdit) {
-							// save the changes for each object once
-							var transaction = this.moduleStore.transaction();
-							array.forEach(this.ldapName, function(idn) {
-								// shallow copy with corrected DN
-								var ivals = lang.mixin({}, vals);
-								ivals[this.moduleStore.idProperty] = idn;
-								this.moduleStore.put(ivals);
-							}, this);
-							deferred = transaction.commit();
-						} else if (this.operation === 'add' || this.operation === 'copy') {
-							deferred = this.moduleStore.add(vals, this.newObjectOptions);
-						} else {
-							deferred = this.moduleStore.put(vals);
-						}
-						deferred.then(lang.hitch(this, function(result) {
-							// see whether saving was successful
-							var success = true;
-							var msg = '';
-							if (result instanceof Array) {
-								msg = '<p>' + _('The following LDAP objects could not be saved:') + '</p><ul>';
-								array.forEach(result, function(iresult) {
-									success = success && iresult.success;
-									if (!iresult.success) {
-										msg += lang.replace('<li>{' + this.moduleStore.idProperty + '}: {details}</li>', iresult);
-									}
-								}, this);
-								msg += '</ul>';
-							} else {
-								success = result.success;
-								if (!result.success) {
-									msg = _('The LDAP object could not be saved: %(details)s', result);
+					if (isExtendedAttribute || isUserTemplate || isDefaultContainerSetting || isContainer) {
+						cache.reset();
+					}
+					if (this._multiEdit) {
+						// save the changes for each object once
+						var transaction = this.moduleStore.transaction();
+						array.forEach(this.ldapName, function(idn) {
+							// shallow copy with corrected DN
+							var ivals = lang.mixin({}, vals);
+							ivals[this.moduleStore.idProperty] = idn;
+							this.moduleStore.put(ivals);
+						}, this);
+						deferred = transaction.commit();
+					} else if (this.operation === 'add' || this.operation === 'copy') {
+						deferred = this.moduleStore.add(vals, this.newObjectOptions);
+					} else {
+						deferred = this.moduleStore.put(vals);
+					}
+					deferred.then(lang.hitch(this, function(result) {
+						// see whether saving was successful
+						var success = true;
+						var msg = '';
+						if (result instanceof Array) {
+							msg = '<p>' + _('The following LDAP objects could not be saved:') + '</p><ul>';
+							array.forEach(result, function(iresult) {
+								success = success && iresult.success;
+								if (!iresult.success) {
+									msg += lang.replace('<li>{' + this.moduleStore.idProperty + '}: {details}</li>', iresult);
 								}
+							}, this);
+							msg += '</ul>';
+						} else {
+							success = result.success;
+							if (!result.success) {
+								msg = _('The LDAP object could not be saved: %(details)s', result);
 							}
+						}
 
-							if (success && this.moduleFlavor == 'users/self') {
-								this._form.clearFormValues();
-								this._form.load(this.ldapName);
-								dialog.alert(_('The changes have been successfully applied.'));
-								saveDeferred.resolve();
-							} else if (success) {
-								// everything ok, close page
-								this._showUsernameTooLongWarning(data.validationDeferred.result);
-								this.onCloseTab();
-								this.onSave(result.$dn$, this.objectType);
-								saveDeferred.resolve();
-							} else {
-								// print error message to user
-								saveDeferred.reject();
-								dialog.alert(msg);
-							}
-						}), lang.hitch(this, function() {
+						if (success && this.moduleFlavor == 'users/self') {
+							this._form.clearFormValues();
+							this._form.load(this.ldapName);
+							dialog.alert(_('The changes have been successfully applied.'));
+							saveDeferred.resolve();
+						} else if (success) {
+							// everything ok, close page
+							this._showUsernameTooLongWarning(data.result);
+							this.onCloseTab();
+							this.onSave(result.$dn$, this.objectType);
+							saveDeferred.resolve();
+						} else {
+							// print error message to user
 							saveDeferred.reject();
-						}));
-					}), function() {
+							dialog.alert(msg);
+						}
+					}), lang.hitch(this, function() {
 						saveDeferred.reject();
-					});
+					}));
 				} else {
 					saveDeferred.reject();
 				}
@@ -1899,39 +1886,6 @@ define([
 			}
 
 			return allValid;
-		},
-
-		_parsePortalCollision: function(collisionsList) {
-			var deferred = new Deferred();
-
-			if (collisionsList.length) {
-				var message = lang.replace('<p>{0}</p><ul>', [_('Some of the specified computers already have a portal set')]);
-				array.forEach(collisionsList, function(collisionObj) {
-					message += lang.replace('<li>{0}</li>', [_('"%(computer)s" uses the portal "%(portal)s"', {
-						computer: entities.encode(collisionObj.computerName),
-						portal: entities.encode(collisionObj.portalName)
-					})]);
-				});
-				message += '</ul>';
-				dialog.confirm(message, [{
-						name: 'cancel',
-						label: _('Cancel'),
-						default: true
-					}, {
-						name: 'save',
-						label: _('Save anyway')
-				}]).then(function(choice) {
-					if (choice === 'save') {
-						deferred.resolve();
-					} else {
-						deferred.reject();
-					}
-				});
-			} else {
-				deferred.resolve();
-			}
-
-			return deferred;
 		},
 
 		_setWidgetInvalid: function(name) {
