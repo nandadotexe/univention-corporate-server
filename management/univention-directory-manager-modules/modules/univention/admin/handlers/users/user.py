@@ -2036,7 +2036,7 @@ class object(univention.admin.handlers.simpleLdap, mungeddial.Support):
 			self._check_password_complexity(pwhistoryPolicy)
 			ml = self._modlist_samba_password(ml, pwhistoryPolicy)
 
-		pwd_change_next_login = self.hasChanged('pwdChangeNextLogin') and self['pwdChangeNextLogin'] == '1'
+		pwd_change_next_login = self['pwdChangeNextLogin'] == '1'
 		unset_pwd_change_next_login = self.hasChanged('pwdChangeNextLogin') and self['pwdChangeNextLogin'] == '0'
 
 		if pwd_change_next_login:
