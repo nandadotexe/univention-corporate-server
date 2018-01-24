@@ -853,12 +853,12 @@ def lockout_sync_s4_to_ucs(s4connector, key, ucs_object):
 	sambaAcctFlags = ucs_object_attributes.get('sambaAcctFlags', [''])[0]
 	sambaBadPasswordTime = ucs_object_attributes.get('sambaBadPasswordTime', [None])[0]
 
-	lockoutTime = ucs_object['attributes'].get('lockoutTime', ["0"])[0]
+	lockoutTime = ucs_object['attributes'].get('lockoutTime', ['0'])[0]
 	if lockoutTime != "0":
 		if "L" not in sambaAcctFlags:
 			acctFlags = univention.admin.samba.acctFlags(sambaAcctFlags)
 			new_sambaAcctFlags = acctFlags.set('L')
-			ud.debug(ud.LDAP, ud.PROCESS, "%s: Marking Samba acount as locked in OpenLDAP" % (function_name,))
+			ud.debug(ud.LDAP, ud.PROCESS, "%s: Marking Samba account as locked in OpenLDAP" % (function_name,))
 			modlist.append(('sambaAcctFlags', sambaAcctFlags, new_sambaAcctFlags))
 
 		badPasswordTime = ucs_object['attributes'].get('badPasswordTime', [None])[0]
@@ -871,7 +871,7 @@ def lockout_sync_s4_to_ucs(s4connector, key, ucs_object):
 		if "L" in sambaAcctFlags:
 			acctFlags = univention.admin.samba.acctFlags(sambaAcctFlags)
 			new_sambaAcctFlags = acctFlags.unset('L')
-			ud.debug(ud.LDAP, ud.PROCESS, "%s: Marking Samba acount as unlocked in OpenLDAP" % (function_name,))
+			ud.debug(ud.LDAP, ud.PROCESS, "%s: Marking Samba account as unlocked in OpenLDAP" % (function_name,))
 			modlist.append(('sambaAcctFlags', sambaAcctFlags, new_sambaAcctFlags))
 
 		if sambaBadPasswordTime:
@@ -904,12 +904,12 @@ def lockout_reset_ucs_to_s4(s4connector, key, object):
 		# only set by sync_from_ucs in MODIFY case
 		return
 
-	new_sambaAcctFlags = new_ucs_object.get('sambaAcctFlags', [None])[0]
+	new_sambaAcctFlags = new_ucs_object.get('sambaAcctFlags', [''])[0]
 	if "L" in new_sambaAcctFlags:
 		# Require new pickled state beeing unlocked
 		return
 
-	old_sambaAcctFlags = old_ucs_object.get('sambaAcctFlags', [None])[0]
+	old_sambaAcctFlags = old_ucs_object.get('sambaAcctFlags', [''])[0]
 	if "L" not in old_sambaAcctFlags:
 		# Pickled state didn't change from locked to unlocked
 		return
