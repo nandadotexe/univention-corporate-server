@@ -649,49 +649,62 @@ define([
 			this._createCategories();
 		},
 
+		_checkEditAuthorization: function() {
+			var authDeferred = new Deferred();
+
+			tools.umcpCommand('get/modules').then(function(result) {
+				var isAuthorized = array.filter(result.modules, function(iModule) {
+					return iModule.flavor === 'settings/portal_all';
+				}).length;
+				if (isAuthorized) {
+					authDeferred.resolve();
+				} else {
+					authDeferred.reject();
+				}
+			});
+
+			return authDeferred;
+		},
+
 		_setupEditMode: function() {
-			// TODO: dummy check. make a real check if the logged in user is authorized
-			// to edit the portal. probably via groups
-			if (tools.status('username') !== 'Administrator') {
-				return;
-			}
+			this._checkEditAuthorization().then(lang.hitch(this, function() {
+				// create standby widget that covers the whole screen when loading form dialogs
+				this.standbyWidget = new Standby({
+					target: dom.byId('portal'),
+					zIndex: 100,
+					image: require.toUrl("dijit/themes/umc/images/standbyAnimation.svg").toString(),
+					duration: 200
+				});
+				put(dom.byId('portal'), this.standbyWidget.domNode);
+				this.standbyWidget.startup();
 
-			// create standby widget that covers the whole screen when loading form dialogs
-			this.standbyWidget = new Standby({
-				target: dom.byId('portal'),
-				zIndex: 100,
-				image: require.toUrl("dijit/themes/umc/images/standbyAnimation.svg").toString(),
-				duration: 200
-			});
-			put(dom.byId('portal'), this.standbyWidget.domNode);
-			this.standbyWidget.startup();
+				
+				// create floating button to enter edit mode
+				this.portalEditFloatingButton = put(dom.byId('portal'), 'div.portalEditFloatingButton div.icon <');
+				on(this.portalEditFloatingButton, 'click', lang.hitch(this, 'setEditMode', true));
 
-			
-			// create floating button to enter edit mode
-			this.portalEditFloatingButton = put(dom.byId('portal'), 'div.portalEditFloatingButton div.icon <');
-			on(this.portalEditFloatingButton, 'click', lang.hitch(this, 'setEditMode', true));
-
-			// create toolbar at bottom to exit edit mode
-			// and have options to edit portal options
-			// that are not (easily) representable in the portal directly
-			this.portalEditBar = new ContainerWidget({
-				'class': 'portalEditBar'
-			});
-			var appearanceButton = new Button({
-				iconClass: '',
-				'class': 'portalEditBarAppearanceButton umcFlatButton',
-				description: 'Edit appearance of portal',
-				callback: lang.hitch(this, '_editPortalProperties', ['fontColor', 'background', 'cssBackground'])
-			});
-			this.portalEditBar.addChild(appearanceButton);
-			var closeButton = new Button({
-				iconClass: 'umcCrossIcon',
-				'class': 'portalEditBarCloseButton umcFlatButton',
-				// description: 'Close Edit mode',
-				callback: lang.hitch(this, 'setEditMode', false)
-			});
-			this.portalEditBar.addChild(closeButton);
-			put(dom.byId('portal'), this.portalEditBar.domNode);
+				// create toolbar at bottom to exit edit mode
+				// and have options to edit portal options
+				// that are not (easily) representable in the portal directly
+				this.portalEditBar = new ContainerWidget({
+					'class': 'portalEditBar'
+				});
+				var appearanceButton = new Button({
+					iconClass: '',
+					'class': 'portalEditBarAppearanceButton umcFlatButton',
+					description: 'Edit appearance of portal',
+					callback: lang.hitch(this, '_editPortalProperties', ['fontColor', 'background', 'cssBackground'])
+				});
+				this.portalEditBar.addChild(appearanceButton);
+				var closeButton = new Button({
+					iconClass: 'umcCrossIcon',
+					'class': 'portalEditBarCloseButton umcFlatButton',
+					// description: 'Close Edit mode',
+					callback: lang.hitch(this, 'setEditMode', false)
+				});
+				this.portalEditBar.addChild(closeButton);
+				put(dom.byId('portal'), this.portalEditBar.domNode);
+			}));
 		},
 
 		setEditMode: function(active) {
