@@ -42,6 +42,7 @@ define([
 	"dojox/widget/Standby",
 	"dijit/registry",
 	"dijit/Dialog",
+	"dijit/Tooltip",
 	"umc/tools",
 	"umc/store",
 	"umc/json",
@@ -50,6 +51,7 @@ define([
 	"umc/widgets/Form",
 	"umc/widgets/Wizard",
 	"umc/widgets/ContainerWidget",
+	"umc/widgets/MultiInput",
 	"umc/modules/udm/cache",
 	"put-selector/put",
 	"./PortalCategory",
@@ -59,7 +61,7 @@ define([
 	// apps.json -> contains all locally installed apps
 	"umc/json!/univention/portal/apps.json",
 	"umc/i18n!portal"
-], function(declare, lang, array, Deferred, aspect, on, dom, domClass, all, sprintf, Standby, registry, Dialog, tools, store, json, dialog, Button, Form, Wizard, ContainerWidget, cache, put, PortalCategory, i18nTools, portalContent, installedApps, _) {
+], function(declare, lang, array, Deferred, aspect, on, dom, domClass, all, sprintf, Standby, registry, Dialog, Tooltip, tools, store, json, dialog, Button, Form, Wizard, ContainerWidget, MultiInput, cache, put, PortalCategory, i18nTools, portalContent, installedApps, _) {
 
 	// convert IPv6 addresses to their canonical form:
 	//   ::1:2 -> 0000:0000:0000:0000:0000:0000:0001:0002
@@ -397,11 +399,28 @@ define([
 			var moduleCache = cache.get('settings/portal_all');
 
 			moduleCache.getProperties('settings/portal', portalContent.portal.dn).then(lang.hitch(this, function(portalProps) {
+				var portalProps = lang.clone(portalProps);
 				var props = array.filter(portalProps, function(iprop) {
 					return array.indexOf(propNames, iprop.id) >= 0;
 				});
 				
 				this._requireWidgets(props).then(lang.hitch(this, function() {
+					array.forEach(props, function(iprop) {
+						// iprop.umcpCommand = moduleStore.umcpCommand;
+						// TODO MultiInput is not required in _requireWidgets
+						if (iprop.multivalue && iprop.type !== 'MultiInput') {
+							iprop.subtypes = [{
+								type: iprop.type,
+								dynamicValues: iprop.dynamicValues,
+								dynamicValuesInfo: iprop.dynamicValuesInfo,
+								dynamicOptions: iprop.dynamicOptions,
+								staticValues: iprop.staticValues,
+								size: iprop.size,
+								depends: iprop.depends
+							}];
+							iprop.type = 'MultiInput';
+						}
+					});
 					var form = new Form({
 						widgets: props,
 						layout: propNames,
@@ -679,6 +698,11 @@ define([
 				
 				// create floating button to enter edit mode
 				this.portalEditFloatingButton = put(dom.byId('portal'), 'div.portalEditFloatingButton div.icon <');
+				new Tooltip({
+					label: 'Edit mode', // TODO wording / translation
+					connectId: [this.portalEditFloatingButton],
+					position: ['above']
+				});
 				on(this.portalEditFloatingButton, 'click', lang.hitch(this, 'setEditMode', true));
 
 				// create toolbar at bottom to exit edit mode
@@ -687,19 +711,26 @@ define([
 				this.portalEditBar = new ContainerWidget({
 					'class': 'portalEditBar'
 				});
+				var allocationButton = new Button({
+					iconClass: '',
+					'class': 'portalEditBarAllocationButton umcFlatButton',
+					description: 'Edit allocation of portal', // TODO wording / translation
+					callback: lang.hitch(this, '_editPortalProperties', ['portalComputers'])
+				});
 				var appearanceButton = new Button({
 					iconClass: '',
 					'class': 'portalEditBarAppearanceButton umcFlatButton',
-					description: 'Edit appearance of portal',
+					description: 'Edit appearance of portal', // TODO wording / translation
 					callback: lang.hitch(this, '_editPortalProperties', ['fontColor', 'background', 'cssBackground'])
 				});
-				this.portalEditBar.addChild(appearanceButton);
 				var closeButton = new Button({
 					iconClass: 'umcCrossIcon',
 					'class': 'portalEditBarCloseButton umcFlatButton',
-					// description: 'Close Edit mode',
+					description: 'Close Edit mode', // TODO wording / translation
 					callback: lang.hitch(this, 'setEditMode', false)
 				});
+				this.portalEditBar.addChild(allocationButton);
+				this.portalEditBar.addChild(appearanceButton);
 				this.portalEditBar.addChild(closeButton);
 				put(dom.byId('portal'), this.portalEditBar.domNode);
 			}));

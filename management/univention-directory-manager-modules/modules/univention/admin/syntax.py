@@ -2168,6 +2168,7 @@ class HostDN(UDM_Objects):
 class PortalComputerDN(UDM_Objects):
 	udm_modules = ('computers/domaincontroller_master', 'computers/domaincontroller_backup', 'computers/domaincontroller_slave', 'computers/memberserver')
 	use_objects = False
+	size = 'Two'
 
 
 class UserID(UDM_Objects):
