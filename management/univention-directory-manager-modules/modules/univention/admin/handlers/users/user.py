@@ -1404,10 +1404,6 @@ def unmapSambaRid(oldattr):
 	return sid[pos + 1:]
 
 
-def unmapPassword(oldattr):
-	return oldattr.get('userPassword', [''])[0]
-
-
 def mapKeyAndValue(old):
 	lst = []
 	for entry in old:
@@ -1473,7 +1469,7 @@ mapping.registerUnmapping('passwordexpiry', unmapPasswordExpiry)
 mapping.registerUnmapping('userexpiry', unmapUserExpiry)
 mapping.registerUnmapping('disabled', unmapDisabled)
 mapping.registerUnmapping('locked', unmapLocked)
-mapping.registerUnmapping('password', unmapPassword)  # TODO: register with regular mapping
+mapping.register('password', 'userPassword', univention.admin.mapping.dontMap(), univention.admin.mapping.ListToString)
 
 
 class object(univention.admin.handlers.simpleLdap, mungeddial.Support):
