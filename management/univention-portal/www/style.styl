@@ -111,31 +111,38 @@ material-shadow(level)
 		material-shadow(2)
 		transition: transform 0.2s
 	
+		.portalEditBarAllocationButton,
+		.portalEditBarHeaderButton,
+		.portalEditBarAppearanceButton,
 		.portalEditBarCloseButton
 			.dijitIcon
 				margin: 0 8px
-				background: url(/univention/js/dijit/themes/umc/images/icons.svg) -300px -100px no-repeat
+				background-image: url(/univention/js/dijit/themes/umc/images/icons.svg)
+				background-repeat: no-repeat
 				background-size: 320px 260px
 				width: 20px
 				height: 20px
-					
-			.dijitButtonText
-				display: none
-
-		.portalEditBarAppearanceButton
-			.dijitIcon
-				margin: 0 8px
-				background: url(/univention/js/dijit/themes/umc/images/icons.svg) -260px -100px no-repeat
-				background-size: 320px 260px
-				width: 40px
-				height: 20px
 
 			.dijitButtonText
 				display: none
+
+		.portalEditBarAllocationButton .dijitIcon
+			background-position: -200px -100px
+
+		.portalEditBarHeaderButton .dijitIcon
+			background-position: -220px -100px
+			width: 40px
+
+		.portalEditBarAppearanceButton .dijitIcon
+			background-position: -260px -100px
+			width: 40px
 	
+		.portalEditBarCloseButton .dijitIcon
+			background-position: -300px -100px
+
 	&.editMode
-		#portalLogo.editMode,
-		#portalTitle.editMode
+		#portalLogo,
+		#portalTitle
 			cursor: pointer
 		.content
 			margin-bottom: 52px
@@ -192,3 +199,24 @@ material-shadow(level)
 			height: 100%
 			background: url('/univention/portal/portal-add-entry-plus.svg') no-repeat center
 			background-size: 39px
+
+	.portalEntryDialog
+		width: 650px
+	.umcWizard
+		.umcGalleryWrapperItem
+			&.name
+				.cornerPiece
+					background-color: #d3d3d3
+				.appIcon
+					display: none
+			&.displayName .umcGalleryName
+				background-color: #d3d3d3
+			&.link .umcGallerySubName
+				background-color: #d3d3d3
+				width: 92%
+				margin-left: 1px
+				height: 20px
+			&.description .appHover div
+				background-color: #d3d3d3
+				height: 45px
+
