@@ -90,7 +90,6 @@ material-shadow(level)
 			&
 				border-color: #282828
 			
-
 	.content
 		margin-top: 50px
 
@@ -102,7 +101,7 @@ material-shadow(level)
 	
 	.portalEditBar
 		position: fixed
-		z-index: 90
+		z-index: 28
 		bottom: 0
 		left: 0
 		right: 0
@@ -200,23 +199,40 @@ material-shadow(level)
 			background: url('/univention/portal/portal-add-entry-plus.svg') no-repeat center
 			background-size: 39px
 
+	.portalEntryWizard
+		.umcPageNav
+			display: none !important
 	.portalEntryDialog
 		width: 650px
-	.umcWizard
-		.umcGalleryWrapperItem
+
+		.umcAppGallery
 			&.name
 				.cornerPiece
 					background-color: #d3d3d3
-				.appIcon
+				.appIcon,
+				.umcGalleryName,
+				.umcGallerySubName,
+				.appHover div
 					display: none
-			&.displayName .umcGalleryName
-				background-color: #d3d3d3
-			&.link .umcGallerySubName
-				background-color: #d3d3d3
-				width: 92%
-				margin-left: 1px
-				height: 20px
-			&.description .appHover div
-				background-color: #d3d3d3
+			&.icon
+				.umcGalleryName,
+				.umcGallerySubName,
+				.appHover div
+					display: none
+			&.displayName
+				.umcGalleryName:not(.hasName)
+					background-color: #d3d3d3
+				.umcGallerySubName,
+				.appHover div
+					display: none
+			&.link
+				.umcGallerySubName:not(.hasLink)
+					background-color: #d3d3d3
+					width: 92%
+					margin-left: 1px
+					height: 20px
+				.appHover div
+					display: none
+			&.description .appHover div:not(.hasDescription)
+				background-color: #e8e8e8
 				height: 45px
-

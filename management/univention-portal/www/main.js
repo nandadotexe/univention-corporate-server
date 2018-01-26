@@ -45,6 +45,8 @@ define([
 	"dijit/registry",
 	"dijit/Dialog",
 	"dijit/Tooltip",
+	"dijit/_WidgetBase",
+	"dijit/_TemplatedMixin",
 	"umc/tools",
 	"umc/store",
 	"umc/json",
@@ -64,7 +66,7 @@ define([
 	// apps.json -> contains all locally installed apps
 	"umc/json!/univention/portal/apps.json",
 	"umc/i18n!portal"
-], function(declare, lang, array, Deferred, aspect, on, dom, domClass, domConstruct, all, sprintf, Standby, styles, registry, Dialog, Tooltip, tools, store, json, dialog, Button, Form, Wizard, ContainerWidget, ConfirmDialog, MultiInput, cache, put, PortalCategory, i18nTools, portalContent, installedApps, _) {
+], function(declare, lang, array, Deferred, aspect, on, dom, domClass, domConstruct, all, sprintf, Standby, styles, registry, Dialog, Tooltip, _WidgetBase, _TemplatedMixin, tools, store, json, dialog, Button, Form, Wizard, ContainerWidget, ConfirmDialog, MultiInput, cache, put, PortalCategory, i18nTools, portalContent, installedApps, _) {
 
 	// convert IPv6 addresses to their canonical form:
 	//   ::1:2 -> 0000:0000:0000:0000:0000:0000:0001:0002
@@ -345,8 +347,6 @@ define([
 
 		'class': 'portalEntryWizard',
 
-		pageNavBootstrapClasses: 'col-xxs-12 col-xs-4',
-
 		pageMainBootstrapClasses: 'col-xxs-12 col-xs-8',
 
 		_getPropFromArray: function(propArray, id) {
@@ -363,151 +363,39 @@ define([
 					name: 'name',
 					widgets: [this._getPropFromArray(this.portalEntryProps, 'name')],
 					layout: ['name'],
+					headerText: 's', // FIXME hacky workaround to get 'nav' to show so that Page.js adds the mainBootstrapClasses to 'main'
 					// helpText: 'gelp hetxt',
 					// helpTextRegion: 'main'
 				}, {
 					name: 'icon',
 					widgets: [this._getPropFromArray(this.portalEntryProps, 'icon')],
 					layout: ['icon'],
+					headerText: 's',
+					// helpText: 'gelp hetxt',
+					// helpTextRegion: 'main'
 				}, {
 					name: 'displayName',
 					widgets: [this._getPropFromArray(this.portalEntryProps, 'displayName')],
-					layout: ['displayName']
+					layout: ['displayName'],
+					headerText: 's',
+					// helpText: 'gelp hetxt',
+					// helpTextRegion: 'main'
 				}, {
 					name: 'link',
 					widgets: [this._getPropFromArray(this.portalEntryProps, 'link')],
-					layout: ['link']
+					layout: ['link'],
+					headerText: 's',
+					// helpText: 'gelp hetxt',
+					// helpTextRegion: 'main'
 				}, {
 					name: 'description',
 					widgets: [this._getPropFromArray(this.portalEntryProps, 'description')],
-					layout: ['description']
+					layout: ['description'],
+					headerText: 's',
+					// helpText: 'gelp hetxt',
+					// helpTextRegion: 'main'
 				}]
 			})
-		},
-
-		switchPage: function(nextPage) {
-			// if (nextPage === 'name') {
-				// this.inherited(arguments);
-				// return;
-			// }
-
-			console.log('switching page');
-			var currentPage = this.previous(nextPage);
-
-			var entryId = this.getWidget('name').get('value') || '';
-
-			var icon = this.getWidget('icon').get('value');
-			if (icon) {
-				if (this.lastIconRule) {
-					styles.removeCssRule(this.lastIconRule.selector, this.lastIconRule.declaration);
-				}
-				this.lastIconRule = {
-					selector: lang.replace('.entryId-{0} .appIcon', [this.getWidget('name').get('value')]),
-					declaration: lang.replace('background-image: url("data:image/{0};base64,{1}") !important;', [this.getWidget('icon')._image._getImageType(), this.getWidget('icon').get('value')])
-				};
-				styles.insertCssRule(this.lastIconRule.selector, this.lastIconRule.declaration);
-			}
-
-			var itemName = '';
-			var displayNames = this.getWidget('displayName').get('value');
-			if (displayNames.length) {
-				var locale = i18nTools.defaultLang().replace(/-/, '_');
-				var localDisplayName = array.filter(displayNames, function(displayName) {
-					return displayName[0] === 'locale';
-				})[0];
-				if (!localDisplayName) {
-					itemName = displayNames[0][1];
-				} else {
-					itemName = localDisplayName[1];
-				}
-			}
-
-			// get the best link to be displayed
-			var link = '';
-			var entryLinks = this.getWidget('link').get('value');
-			if (entryLinks.length) {
-				var browserHostname = getURIHostname(document.location.href);
-				var links = getLocalLinks(browserHostname, tools.status('fqdn'), entryLinks);
-				links = links.concat(entryLinks);
-				var link = getHighestRankedLink(document.location.href, links);
-			}
-
-			var itemHoverContent = '';
-			var descriptions = this.getWidget('description').get('value');
-			if (descriptions.length) {
-				var locale = i18nTools.defaultLang().replace(/-/, '_');
-				var localDescription = array.filter(descriptions, function(description) {
-					return description[0] === 'locale';
-				})[0];
-				if (!localDescription) {
-					itemHoverContent = descriptions[0][1];
-				} else {
-					itemHoverContent = localDescription[1];
-				}
-			}
-
-			var item = {
-				page: nextPage,
-				entryId: entryId,
-				itemName: itemName,
-				itemSubName: link,
-				itemHoverContent: itemHoverContent
-			};
-			var domString = '' +
-				'<div class="umcGalleryWrapperItem {page} entryId-{entryId}" >' +
-					'<div class="cornerPiece boxShadow bl">' +
-						'<div class="hoverBackground"></div>' +
-					'</div>' +
-					'<div class="cornerPiece boxShadow tr">' +
-						'<div class="hoverBackground"></div>' +
-					'</div>' +
-					'<div class="cornerPiece boxShadowCover bl"></div>' +
-					'<div class="appIcon umcGalleryIcon"></div>' +
-					'<div class="appInnerWrapper umcGalleryItem">' +
-						'<div class="contentWrapper">' +
-							'<div class="appContent">' +
-								'<div class="umcGalleryName">' +
-									'<div class="umcGalleryNameContent">{itemName}</div>' +
-								'</div>' +
-								'<div class="umcGallerySubName">{itemSubName}</div>' +
-							'</div>' +
-							'<div class="appHover">' +
-								'<div>{itemHoverContent}</div>' +
-							'</div>' +
-						'</div>' +
-					'</div>' +
-				'</div>';
-			var node = domConstruct.toDom(lang.replace(domString, item));
-			// // TODO memory leak
-			// on(node, mouse.enter, function() {
-				// domClass.add(this, 'hover');
-			// });
-			// on(node, mouse.leave, function() {
-				// domClass.remove(this, 'hover');
-			// });
-			if (nextPage === 'description') {
-				domClass.add(node, 'hover');
-			}
-
-			var nextPageWidget = this.getPage(nextPage);
-			nextPageWidget._nav.destroyDescendants();
-			var c = new ContainerWidget({
-				region: 'nav'
-			});
-			c.domNode.appendChild(node);
-			nextPageWidget.addChild(c);
-			// domClass.remove(nextPageWidget._nav.domNode, 'dijitDisplayNone');
-			domClass.add(nextPageWidget._nav.domNode, 'umcAppGallery');
-			// domConstruct.empty(nextPageWidget._nav.domNode);
-			// put(nextPageWidget._nav.domNode, node);
-
-			// domClass.toggle(nextPageWidget._nav.domNode, 'dijitDisplayNone', false);
-			// domClass.remove(nextPageWidget._nav.domNode, nextPageWidget._initialBootstrapClasses);
-			// domClass.add(nextPageWidget._nav.domNode, nextPageWidget.navBootstrapClasses);
-			// domClass.remove(nextPageWidget._main.domNode, nextPageWidget._initialBootstrapClasses);
-			// domClass.add(nextPageWidget._main.domNode, nextPageWidget.mainBootstrapClasses);
-
-			this.inherited(arguments);
 		},
 
 		next: function(currentPage) {
@@ -606,6 +494,85 @@ define([
 		}
 	});
 
+	var PortalEntryWizardTile = declare('Tile', [_WidgetBase, _TemplatedMixin], {
+		templateString: '' +
+			'<div class="umcAppGallery col-xs-4" data-dojo-attach-point="domNode">' +
+				'<div class="umcGalleryWrapperItem" data-dojo-attach-point="wrapperNode">' +
+					'<div class="cornerPiece boxShadow bl">' +
+						'<div class="hoverBackground"></div>' +
+					'</div>' +
+					'<div class="cornerPiece boxShadow tr">' +
+						'<div class="hoverBackground"></div>' +
+					'</div>' +
+					'<div class="cornerPiece boxShadowCover bl"></div>' +
+					'<div class="appIcon umcGalleryIcon" data-dojo-attach-point="iconNode"></div>' +
+					'<div class="appInnerWrapper umcGalleryItem">' +
+						'<div class="contentWrapper">' +
+							'<div class="appContent">' +
+								'<div class="umcGalleryName" data-dojo-attach-point="nameWrapperNode">' +
+									'<div class="umcGalleryNameContent" data-dojo-attach-point="nameNode"></div>' +
+								'</div>' +
+								'<div class="umcGallerySubName" data-dojo-attach-point="linkNode"></div>' +
+							'</div>' +
+							'<div class="appHover">' +
+								'<div data-dojo-attach-point="descriptionNode"></div>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+			'</div>',
+
+		currentPageClass: null,
+		_setCurrentPageClassAttr: function(page) {
+			domClass.toggle(this.wrapperNode, 'hover', page === 'description');
+			domClass.replace(this.domNode, page, this.currentPageClass);
+			this._set('currentPageClass', page);
+		},
+
+		icon: null,
+		iconStyle: null,
+		_setIconAttr: function(iconUri) {
+			if (this.iconStyle) {
+				styles.removeCssRule(this.iconStyle.selector, this.iconStyle.declaration);
+			}
+			if (iconUri) {
+				this.iconStyle = {
+					selector: lang.replace('#{0} .appIcon', [this.id]),
+					declaration: lang.replace('background-image: url("{0}") !important;', [iconUri])
+				};
+				styles.insertCssRule(this.iconStyle.selector, this.iconStyle.declaration);
+			}
+			this._set('icon', iconUri);
+		},
+
+		name: null,
+		_setNameAttr: function(name) {
+			this.set('nameClass', name ? 'hasName': null);
+			this.nameNode.innerHTML = name;
+			this._set('name', name);
+		},
+		nameClass: null,
+		_setNameClassAttr: { node: 'nameWrapperNode', type: 'class' },
+
+		link: null,
+		_setLinkAttr: function(link) {
+			this.set('linkClass', link ? 'hasLink' : null);
+			this.linkNode.innerHTML = link;
+			this._set('link', link);
+		},
+		linkClass: null,
+		_setLinkClassAttr: { node: 'linkNode', type: 'class' },
+
+		description: null,
+		_setDescriptionAttr: function(description) {
+			this.set('descriptionClass', description ? 'hasDescription' : null)	;
+			this.descriptionNode.innerHTML = description;
+			this._set('description', description);
+		},
+		descriptionClass: null,
+		_setDescriptionClassAttr: { node: 'descriptionNode', type: 'class' }
+	});
+
 	// adjust white styling of header via extra CSS class
 	if (lang.getObject('portal.fontColor', false, portalContent) === 'white') {
 		try {
@@ -670,6 +637,24 @@ define([
 			// update header tooltips
 			this._portalLogoTooltip.set('connectId', (this.editMode ? dom.byId('portalLogo') : [] ));
 			this._portalTitleTooltip.set('connectId', (this.editMode ? dom.byId('portalTitle') : [] ));
+
+			// update color of header icons
+			domClass.toggle(dom.byId('umcHeader'), 'umcWhiteIcons', lang.getObject('portal.fontColor', false, portalContent) === 'white');
+		},
+
+		_reloadCss: function() {
+			// reload the portal.css file
+			// TODO this is too hacky
+			var re = /.*\/portal.css\??$/;
+			var links = document.getElementsByTagName('link');
+			var link = array.filter(links, function(ilink) {
+				return re.test(ilink.href);
+			})[0];
+			if (link.href.lastIndexOf('?') === link.href.length-1) {
+				link.href = link.href.substr(0, link.href.length-1);
+			} else {
+				link.href += '?';
+			}
 		},
 
 		// TODO copy pasted partially from udm/DetailPage - _prepareWidgets
@@ -715,7 +700,7 @@ define([
 						layout: propNames,
 						moduleStore: moduleStore,
 					});
-					on(form, 'submit', function() {
+					on(form, 'submit', lang.hitch(this, function() {
 						// ------ copy pasted from udm/DetailPage.js - save()
 						// reset settings from last validation
 						tools.forIn(form._widgets, function(iname, iwidget) {
@@ -743,7 +728,7 @@ define([
 						tools.umcpCommand('udm/validate', validateParams).then(function(result) {
 							// TODO check for non valid values
 							// and set the widget to valid=false
-							console.log(result);
+							// console.log(result);
 						});
 
 						var putParams = {
@@ -755,20 +740,30 @@ define([
 						form.moduleStore.put(putParams).then(lang.hitch(this, function(result) {
 							// TODO: check result and make error handling
 							json.load('/univention/portal/portal.json', require, lang.hitch(this, function(result) {
+								console.log('json load result:');
+								console.log(result);
+								// TODO load json again if it fails?
+								if (!result.portal) {
+									console.log(result);
+								}
 								portalContent = result;
 								this._updateStyling();
+
+								// TODO only do this when changing appearance?
+								this._reloadCss();
 							}));
 						}), function(e) {
+							// TODO check if this is needed
 							console.log('error');
 							console.log(e);
 						});
-					});
+					}));
 					form.startup();
-
 					// load form with portal
 					form.load(portalContent.portal.dn).then(function() {
 						form.ready().then(function() {
 							// create dialog to show form if form is loaded
+							console.log(form.get('value'));
 							var dialog = new ConfirmDialog({
 								title: dialogTitle,
 								message: form,
@@ -888,7 +883,6 @@ define([
 		},
 
 		addPortalEntry: function(category) {
-			console.log('add portal entry');
 			var standbyWidget = this.standbyWidget;
 			standbyWidget.show();
 			var moduleStore = store('$dn$', 'udm', 'settings/portal_all');
@@ -899,10 +893,88 @@ define([
 
 				this._requireWidgets(portalEntryProps).then(lang.hitch(this, function() {
 					portalEntryProps = this._prepareProps(portalEntryProps);
+					var c = new ContainerWidget({});
+					var tile = new PortalEntryWizardTile();
 					var wizard = new PortalEntryWizard({
 						portalEntryProps: portalEntryProps
 					});
 					wizard.startup();
+					tile.set('currentPageClass', wizard.selectedChildWidget.name);
+					// TODO own all event handlers
+					wizard.watch('selectedChildWidget', function(name, oldPage, newPage) {
+						tile.set('currentPageClass', newPage.name);
+						var subtext = {
+							'icon': 'Icon',
+							'displayName': 'Display Name',
+							'link': 'Link',
+							'description': 'Description'
+						}[newPage.name];
+						dialog.set('title', lang.replace('{0}: {1}', [dialog._initialTitle, subtext]));
+					});
+					wizard.getWidget('icon')._image.watch('value', function(name, oldVal, newVal) {
+						var iconUri = '';
+						if (newVal) {
+							iconUri = lang.replace('data:image/{0};base64,{1}', [this._getImageType(), newVal]);
+						}
+						tile.set('icon', iconUri);
+					})
+					// on(wizard.getWidget('icon'), 'change', function(value) {
+						// if (value) {
+							// value = lang.replace('data:image/{0};base64,{1}', [this._image._getImageType(), value]);
+						// }
+						// tile.set('icon', value);
+					// });
+					on(wizard.getWidget('displayName'), 'change', function() {
+						var displayName = ''
+						var displayNames = wizard.getWidget('displayName').get('value');
+						if (displayNames.length) {
+							var locale = i18nTools.defaultLang().replace(/-/, '_');
+							var displayNamesWithText = array.filter(displayNames, function(idisplayName) {
+								return idisplayName[1];
+							});
+							var localDisplayName = array.filter(displayNamesWithText, function(idisplayName) {
+								return idisplayName[0] === locale;
+							})[0];
+							if (localDisplayName) {
+								displayName = localDisplayName[1];
+							} else if (displayNamesWithText.length) {
+								displayName = displayNamesWithText[0][1];
+							}
+						}
+						tile.set('name', displayName);
+					});
+					on(wizard.getWidget('link'), 'change', function() {
+						var link = '';
+						var entryLinks = wizard.getWidget('link').get('value');
+						if (entryLinks.length) {
+							var browserHostname = getURIHostname(document.location.href);
+							var links = getLocalLinks(browserHostname, tools.status('fqdn'), entryLinks);
+							links = links.concat(entryLinks);
+							var link = getHighestRankedLink(document.location.href, links);
+						}
+						tile.set('link', link);
+					});
+					on(wizard.getWidget('description'), 'change', function() {
+						var description = '';
+						var descriptions = wizard.getWidget('description').get('value');
+						if (descriptions.length) {
+							var locale = i18nTools.defaultLang().replace(/-/, '_');
+							var descriptionsWithText = array.filter(descriptions, function(idescription) {
+								return idescription[1];
+							});
+							var localDescription = array.filter(descriptionsWithText, function(idescription) {
+								return idescription[0] === locale;
+							})[0];
+							if (localDescription) {
+								description = localDescription[1];
+							} else if (descriptionsWithText.length) {
+								description = descriptionsWithText[0][1];
+							}
+						}
+						tile.set('description', description);
+					});
+
+
 					on(wizard, 'cancel', lang.hitch(this, function() {
 						// TODO close dialog and destroy
 						console.log('cancel called');
@@ -911,22 +983,32 @@ define([
 						});
 					}));
 					on(wizard, 'finished', lang.hitch(this, function(values) {
-						console.log('finished');
-						console.log(values);
 						lang.mixin(values, {
 							activated: true,
 							category: category,
 							portal: [portalContent.portal.dn],
 						});
-						moduleStore.add(values, {
+						var addDeferred = moduleStore.add(values, {
 							objectType: 'settings/portal_entry'
 						});
+						addDeferred.then(function(result) {
+							// TODO check result to see if creating was successful
+						}, function() {
+							// TODO error case
+						});
+						// TODO close Dialog on finish
 						// TODO add entry to grid store of PortalCategory
 					}));
+
+
+					c.addChild(tile);
+					c.addChild(wizard);
+
 					var dialog = new Dialog({
-						title: 'Create a portal entry',
+						_initialTitle: 'Create a new portal entry', // TODO wording / translation
+						title: 'Create a new portal entry', // TODO wording / translation
 						'class': 'portalEntryDialog',
-						content: wizard
+						content: c
 					});
 					dialog.show();
 					standbyWidget.hide();
@@ -950,7 +1032,7 @@ define([
 			tools.umcpCommand('get/modules').then(function(result) {
 				var isAuthorized = array.filter(result.modules, function(iModule) {
 					return iModule.flavor === 'settings/portal_all';
-				}).length >= 1; 
+				}).length >= 1;
 				if (isAuthorized) {
 					authDeferred.resolve();
 				} else {
