@@ -830,6 +830,7 @@ def password_sync_s4_to_ucs_no_userpassword(s4connector, key, ucs_object):
 	# The userPassword should not synchronized for computer accounts
 	password_sync_s4_to_ucs(s4connector, key, ucs_object, modifyUserPassword=False)
 
+
 def lockout_sync_s4_to_ucs(s4connector, key, ucs_object):
 	"""
 	Sync account locking *state* from Samba/AD to OpenLDAP:
@@ -840,7 +841,7 @@ def lockout_sync_s4_to_ucs(s4connector, key, ucs_object):
 	_d = ud.function('ldap.s4.%s' % function_name)
 	ud.debug(ud.LDAP, ud.INFO, "%s called" % function_name)
 
-	if not ucs_object['modtype'] in ('modify', 'add'):
+	if ucs_object['modtype'] not in ('modify', 'add'):
 		return
 
 	modlist = []
@@ -882,6 +883,7 @@ def lockout_sync_s4_to_ucs(s4connector, key, ucs_object):
 		ud.debug(ud.LDAP, ud.INFO, "%s: modlist: %s" % (function_name, modlist))
 		s4connector.lo.lo.modify(ucs_object['dn'], modlist)
 
+
 def lockout_reset_ucs_to_s4(s4connector, key, object):
 	"""
 	Sync unlock *modification* from OpenLDAP to Samba/AD:
@@ -891,7 +893,7 @@ def lockout_reset_ucs_to_s4(s4connector, key, object):
 	_d = ud.function('ldap.s4.%s' % function_name)
 	ud.debug(ud.LDAP, ud.INFO, "%s called" % function_name)
 
-	if not object['modtype'] in ('modify', 'add'):
+	if object['modtype'] not in ('modify', 'add'):
 		return
 
 	new_ucs_object = object.get('new_ucs_object', {})
