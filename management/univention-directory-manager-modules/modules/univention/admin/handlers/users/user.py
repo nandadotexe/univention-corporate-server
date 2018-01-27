@@ -1618,7 +1618,7 @@ class object(univention.admin.handlers.simpleLdap, mungeddial.Support):
 				sharepath = os.path.split(sharepath)[0]
 
 	def _unmapLockedTime(self):
-		self['lockedTime'] = ''
+		self.info['lockedTime'] = ''
 		locked_time = self.oldattr.get('sambaBadPasswordTime', [''])[0]
 		if locked_time:
 			try:
@@ -1626,7 +1626,7 @@ class object(univention.admin.handlers.simpleLdap, mungeddial.Support):
 			except ValueError:
 				lockout_duration = 1800
 
-			self['lockedTime'] = str(lockout_duration + locked_time)
+			self.info['lockedTime'] = str(lockout_duration + locked_time)
 
 	def modify(self, *args, **kwargs):
 		try:
