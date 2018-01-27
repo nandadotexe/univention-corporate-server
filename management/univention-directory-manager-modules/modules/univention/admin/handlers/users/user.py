@@ -1386,7 +1386,7 @@ def isSambaLocked(oldattr):
 
 
 def isKerberosLocked(oldattr):
-	flags = oldattr.get('krb5KDCFlags', ['0'])
+	flags = oldattr.get('krb5KDCFlags', ['0'])[0]
 	try:
 		state = 1 << 17
 		return int(flags) & state == state
