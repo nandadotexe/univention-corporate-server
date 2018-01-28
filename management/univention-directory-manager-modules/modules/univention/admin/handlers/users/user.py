@@ -1826,7 +1826,7 @@ class object(univention.admin.handlers.simpleLdap, mungeddial.Support):
 			# password property is required but LDAP ACL's disallow reading them
 			self.info['password'] = '*'
 			self.oldinfo['password'] = '*'
-			self.info['locked'] = self.oldinfo['locked']
+			self.info['disabled'] = self.oldinfo['disabled']
 
 		if not self.exists() or self.hasChanged('primaryGroup'):
 			# Ensure the primary Group has the samba option enabled
